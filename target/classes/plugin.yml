@@ -1,0 +1,246 @@
+name: NusaTown
+main: id.nusacore.NusaCore
+version: 1.0-BETA
+api-version: 1.20
+depend: [Vault]
+softdepend: [PlaceholderAPI, ProtocolLib]
+loadbefore: [Towny]  # Pastikan plugin kita load sebelum Towny
+authors: [YourName]
+description: NusaTown server core plugin
+
+commands:
+  nusatown:
+    description: Perintah utama untuk plugin NusaTown
+    usage: /<command> [help|reload|economy]
+    aliases: [nt, nusa]
+  spawn:
+    description: Teleport ke spawn server
+    usage: /<command> [set]
+    aliases: [s, hub, lobby]
+  back:
+    description: Kembali ke lokasi sebelumnya
+    usage: /<command>
+    aliases: [b, return, kembali]
+  tpa:
+    description: Kirim permintaan teleport ke pemain lain
+    usage: /<command> <pemain>
+    aliases: [tprequest, teleportrequest]
+  tpahere:
+    description: Minta pemain lain untuk teleport ke lokasi Anda
+    usage: /<command> <pemain>
+    aliases: [tphere]
+  tpaccept:
+    description: Terima permintaan teleport
+    usage: /<command>
+    aliases: [tpyes]
+  tpdeny:
+    description: Tolak permintaan teleport
+    usage: /<command>
+    aliases: [tpno]
+  tpcancel:
+    description: Batalkan permintaan teleport yang Anda kirim
+    usage: /<command>
+  tptoggle:
+    description: Atur preferensi permintaan teleport
+    usage: /<command>
+    aliases: [toggletp]
+  donate:
+    description: Lihat daftar rank donasi dan benefitnya
+    usage: /<command> [rank]
+    aliases: [donation, ranks]
+  buy:
+    description: Lihat daftar rank donasi dan benefitnya
+    usage: /<command> [rank]
+    aliases: [store]
+  rtp:
+    description: Teleport ke lokasi acak di dunia
+    usage: /<command> [world]
+    aliases: [randomtp, wild, wilderness, random]
+  rtpcancel:
+    description: Cancel an ongoing RTP location search
+    usage: /<command>
+    aliases: [rtpc, cancelrtp]
+  afk:
+    description: Tandai diri sebagai AFK (Away From Keyboard)
+    usage: /afk [alasan]
+    aliases: [away]
+  help:
+    description: Tampilkan bantuan perintah
+    usage: /<command> [kategori] [halaman]
+    aliases: [h, ?]
+  fpsbooster:
+    description: Aktifkan/nonaktifkan pengurangan partikel untuk meningkatkan FPS
+    usage: /<command> [on|off|status|particles|entities|animations]
+    aliases: [fps, booster, performance]
+  balance:
+    description: Periksa saldo Anda atau pemain lain
+    usage: /<command> [pemain]
+    aliases: [bal, money, saldo]
+  pay:
+    description: Kirim uang ke pemain lain
+    usage: /<command> <pemain> <jumlah>
+    aliases: [bayar, kirim]
+  money:
+    description: Kelola saldo pemain (admin)
+    usage: /<command> <give|take|set|reset> <pemain> [jumlah]
+    permission: nusatown.command.money.admin
+    aliases: [eco, economy]
+  tokens:
+    description: Lihat dan kelola tokens pemain
+    usage: /<command> [pemain|give|take|set|reset] [pemain] [jumlah]
+    aliases: [token]
+  baltop:
+    description: Lihat daftar pemain dengan saldo tertinggi
+    usage: /<command> [halaman]
+    aliases: [balancetop, moneytop]
+  msg:
+    description: Kirim pesan privat ke pemain lain
+    usage: /<command> <pemain> <pesan>
+    aliases: [tell, w, whisper, pm]
+  r:
+    description: Balas pesan privat terakhir
+    usage: /<command> <pesan>
+    aliases: [reply]
+  socialspy:
+    description: Toggle social spy untuk admin
+    usage: /<command>
+    permission: nusatown.socialspy
+  rankup:
+    description: Naik ke rank berikutnya atau lihat informasi rank
+    usage: /<command> [up|info|help]
+    aliases: [rank, ranks]
+  vote:
+    description: Tampilkan link voting server
+    usage: /<command>
+    aliases: [vote]
+  voteparty:
+    description: Lihat progress VoteParty
+    usage: /<command>
+    aliases: [vp]
+  votepartyadmin:
+    description: Kelola pengaturan VoteParty (Admin)
+    usage: /<command> <set|reset|target|start|reload> [nilai]
+    permission: nusatown.voteparty.admin
+    aliases: [vpa]
+  votereward:
+    description: Berikan hadiah vote pada pemain
+    usage: /<command> <player>
+    permission: nusatown.votereward.execute
+  votereload:
+    description: Muat ulang konfigurasi sistem voting
+    usage: /<command>
+    permission: nusatown.voteparty.admin
+    aliases: [vreload]
+
+permissions:
+  nusatown.admin.reload:
+    description: Izin untuk reload plugin
+    default: op
+  nusatown.admin.setspawn:
+    description: Izin untuk mengatur spawn
+    default: op
+  nusatown.admin.economy:
+    description: Izin untuk mengelola fitur ekonomi
+    default: op
+  nusatown.admin.teleport:
+    description: Izin untuk mengatur fitur teleport
+    default: op
+  nusatown.command.back:
+    description: Izin untuk kembali ke lokasi sebelumnya
+    default: true
+  nusatown.protection.bypass:
+    description: Izin untuk bypass proteksi spawn (air dan void)
+    default: op
+  nusatown.command.tpa:
+    description: Izin untuk mengirim permintaan teleport
+    default: true
+  nusatown.command.tpahere:
+    description: Izin untuk meminta pemain teleport ke Anda
+    default: true
+  nusatown.command.tpaccept:
+    description: Izin untuk menerima permintaan teleport
+    default: true
+  nusatown.command.tpdeny:
+    description: Izin untuk menolak permintaan teleport
+    default: true
+  nusatown.command.tpcancel:
+    description: Izin untuk membatalkan permintaan teleport
+    default: true
+  nusatown.combat.bypass:
+    description: Izin untuk bypass combat tag
+    default: op
+  nusatown.teleport.bypass:
+    description: Izin untuk bypass countdown teleport
+    default: op
+  nusatown.admin.chat:
+    description: Izin untuk mengatur format chat
+    default: op
+  nusatown.command.tptoggle:
+    description: Izin untuk mengatur preferensi teleport
+    default: true
+  nusatown.command.rtp:
+    description: Izin untuk menggunakan command RTP
+    default: true
+  nusatown.command.rtp.world:
+    description: Izin untuk teleport ke dunia tertentu dengan RTP
+    default: op
+  nusatown.rtp.bypass:
+    description: Izin untuk bypass cooldown RTP
+    default: op
+  nusatown.command.afk:
+    description: Izin untuk menggunakan command AFK
+    default: true
+  nusatown.afk.exempt:
+    description: Izin untuk tidak ditandai AFK secara otomatis
+    default: op
+  nusatown.afkregion.mine:
+    description: Izin untuk mendapatkan reward AFK di area tambang
+    default: true
+  nusatown.afkregion.farm:
+    description: Izin untuk mendapatkan reward AFK di area pertanian
+    default: true
+  nusatown.afkregion.spawner:
+    description: Izin untuk mendapatkan reward AFK di area spawner
+    default: op
+  nusatown.command.fpsbooster:
+    description: Izin untuk menggunakan FPS Booster
+    default: true
+  nusatown.command.fpsbooster.admin:
+    description: Izin untuk mengonfigurasi FPS Booster
+    default: op
+  nusatown.command.balance:
+    description: Izin untuk mengecek saldo sendiri
+    default: true
+  nusatown.command.balance.others:
+    description: Izin untuk mengecek saldo pemain lain
+    default: op
+  nusatown.command.pay:
+    description: Izin untuk mengirim uang ke pemain lain
+    default: true
+  nusatown.command.money.admin:
+    description: Izin untuk mengelola saldo pemain (admin)
+    default: op
+  nusatown.command.tokens:
+    description: Izin untuk mengecek tokens sendiri
+    default: true
+  nusatown.command.tokens.others:
+    description: Izin untuk mengecek tokens pemain lain
+    default: op
+  nusatown.command.tokens.admin:
+    description: Izin untuk mengelola tokens pemain (admin)
+    default: op
+  nusatown.socialspy:
+    description: Izin untuk menggunakan social spy
+    default: op
+  nusatown.command.rankup:
+    description: Izin untuk menggunakan perintah rankup
+    default: true
+  nusatown.admin.rankup:
+    description: Izin untuk melakukan reload pada sistem rank
+    default: op
+  nusatown.voteparty.admin:
+    description: Izin untuk mengelola VoteParty
+    default: op
+  nusatown.votereward.execute:
+    description: Izin untuk memberikan reward vote
+    default: op

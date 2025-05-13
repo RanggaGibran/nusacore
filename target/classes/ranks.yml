@@ -1,0 +1,105 @@
+# NusaTown Rankup Configuration
+
+settings:
+  # Pengaturan umum sistem rankup
+  prefix: "&8[&7Rank&8] "
+  rankup-message: "&aSelamat! Anda telah naik ke rank {rank}!"
+  not-enough-money-message: "&cAnda membutuhkan {money} untuk naik ke rank berikutnya."
+  max-rank-message: "&eAnda sudah mencapai rank tertinggi!"
+  placeholder-format: "&7[{rank_name}&7]"
+
+ranks:
+  # Daftar rank yang tersedia (I-IV)
+  I:
+    name: "&7I"
+    display-name: "&7Pengembara"
+    cost: 0  # Rank awal
+    playtime-required: 0  # Playtime dalam jam
+    prefix: "&7[I]"
+    color: "&7"  # Warna rank
+    next-rank: "II"  # Rank berikutnya
+    perks:
+      - "Akses dasar ke fitur server"
+      - "Daily reward: &650 koin"
+      - "Akses ke &f1 home"
+      - "Akses ke kit &7Pemula"
+      - "Cooldown teleport: &f30 &7detik"
+    commands:
+      - "lp user {player} permission set nusatown.rank.i true"
+      - "lp user {player} permission set essentials.sethome.multiple.nusatown.1 true"
+      - "lp user {player} permission set essentials.kit.pemula true"
+  
+  II:
+    name: "&aII"
+    display-name: "&aPendekar"
+    cost: 10000  # Biaya untuk naik ke rank ini
+    playtime-required: 5  # 5 jam playtime
+    prefix: "&a[II]"
+    color: "&a"
+    next-rank: "III"
+    perks:
+      - "Semua benefit rank sebelumnya"
+      - "Daily reward: &6100 koin"
+      - "Akses ke &f2 home"
+      - "Akses ke kit &aPendekar"
+      - "Cooldown teleport: &f25 &7detik"
+      - "Diskon toko: &e5%"
+    commands:
+      - "lp user {player} permission set nusatown.rank.ii true"
+      - "lp user {player} permission set essentials.sethome.multiple.nusatown.2 true"
+      - "lp user {player} permission set essentials.kit.pendekar true"
+      - "lp user {player} parent addtemp rank-ii 30d"  # Tambahkan 30 hari durasi rank
+  
+  III:
+    name: "&9III"
+    display-name: "&9Pahlawan"
+    cost: 50000
+    playtime-required: 20  # 20 jam playtime
+    prefix: "&9[III]"
+    color: "&9"
+    next-rank: "IV"
+    perks:
+      - "Semua benefit rank sebelumnya"
+      - "Daily reward: &6200 koin"
+      - "Akses ke &f3 home"
+      - "Akses ke kit &9Pahlawan"
+      - "Cooldown teleport: &f15 &7detik"
+      - "Diskon toko: &e10%"
+      - "Akses ke warp khusus"
+      - "Akses ke /hat command"
+    commands:
+      - "lp user {player} permission set nusatown.rank.iii true"
+      - "lp user {player} permission set essentials.sethome.multiple.nusatown.3 true"
+      - "lp user {player} permission set essentials.kit.pahlawan true"
+      - "lp user {player} permission set essentials.hat true"
+      - "lp user {player} parent remove rank-ii"
+      - "lp user {player} parent addtemp rank-iii 30d"
+  
+  IV:
+    name: "&6IV"
+    display-name: "&6Legenda"
+    cost: 200000
+    playtime-required: 50  # 50 jam playtime
+    prefix: "&6[IV]"
+    color: "&6"
+    next-rank: ""  # Rank terakhir
+    perks:
+      - "Semua benefit rank sebelumnya"
+      - "Daily reward: &6400 koin"
+      - "Akses ke &f5 home"
+      - "Akses ke kit &6Legenda"
+      - "Cooldown teleport: &f10 &7detik"
+      - "Diskon toko: &e15%"
+      - "Custom join message"
+      - "Custom prefix color di chat"
+      - "/nick command"
+      - "Akses ke fitur kosmetik"
+      - "Akses ke /fly di spawn"
+    commands:
+      - "lp user {player} permission set nusatown.rank.iv true"
+      - "lp user {player} permission set essentials.sethome.multiple.nusatown.5 true"
+      - "lp user {player} permission set essentials.kit.legenda true"
+      - "lp user {player} permission set essentials.nick true"
+      - "lp user {player} permission set essentials.fly.spawn true"
+      - "lp user {player} parent remove rank-iii"
+      - "lp user {player} parent add rank-iv"

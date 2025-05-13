@@ -1,0 +1,69 @@
+# Konfigurasi Rank Donasi NusaTown
+
+settings:
+  title: "&6✦ &b&lNusaTown Donation Ranks &6✦"
+  header: "&7Dukung server dan dapatkan fitur eksklusif!"
+  footer: "&eKunjungi &nstore.nusatown.com&e untuk membeli rank"
+  purchase-link: "https://store.nusatown.com"
+
+ranks:
+  alkemis:
+    display-name: "&aAlkemis"
+    cost: "50.000"
+    description: "Rank pemula yang cocok untuk pemain baru"
+    color: "&a"
+    benefits:
+      - "&a+ &fAkses ke 2 home"
+      - "&a+ &fCooldown teleport 10 detik"
+      - "&a+ &fPrefix [Alkemis] di chat"
+    
+  phantom:
+    display-name: "&5Phantom"
+    cost: "100.000"
+    description: "Rank menengah dengan kemampuan tambahan"
+    color: "&5"
+    benefits:
+      - "&a+ &fAkses ke 5 home"
+      - "&a+ &fCooldown teleport 5 detik"
+      - "&a+ &fPrefix [Phantom] di chat"
+      - "&a+ &fKemampuan terbang di spawn"
+  
+  oracle:
+    display-name: "&9Oracle"
+    cost: "150.000"
+    description: "Rank tinggi dengan kemampuan spesial"
+    color: "&9"
+    benefits:
+      - "&a+ &fAkses ke 8 home"
+      - "&a+ &fTanpa cooldown teleport"
+      - "&a+ &fPrefix [Oracle] di chat"
+      - "&a+ &fKemampuan terbang di spawn"
+      - "&a+ &fAkses ke kit Oracle"
+  
+  leviathan:
+    display-name: "&3Leviathan"
+    cost: "250.000"
+    description: "Rank elite dengan banyak keuntungan"
+    color: "&3"
+    benefits:
+      - "&a+ &fAkses ke 12 home"
+      - "&a+ &fTanpa cooldown teleport"
+      - "&a+ &fPrefix [Leviathan] di chat"
+      - "&a+ &fKemampuan terbang di seluruh dunia"
+      - "&a+ &fAkses ke kit Leviathan"
+      - "&a+ &fTerbang lebih cepat"
+  
+  celestial:
+    display-name: "&e&lCelestial"
+    cost: "500.000"
+    description: "Rank tertinggi dengan semua keuntungan"
+    color: "&e"
+    benefits:
+      - "&a+ &fAkses ke 20 home"
+      - "&a+ &fTanpa cooldown teleport"
+      - "&a+ &fPrefix [Celestial] di chat"
+      - "&a+ &fKemampuan terbang di seluruh dunia"
+      - "&a+ &fAkses ke semua kit"
+      - "&a+ &fTerbang lebih cepat"
+      - "&a+ &fPartikel custom"
+      - "&a+ &fPemberitahuan VIP saat join server"

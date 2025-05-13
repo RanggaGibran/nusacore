@@ -1,0 +1,128 @@
+# FPS Booster Configuration for NusaCore
+
+# Default settings for new players
+defaults:
+  filter-particles: false
+  filter-item-frames: false
+  filter-paintings: false
+  filter-animations: false
+
+# Percentage of particles to reduce (0-100)
+particle-reduction-rate: 70
+
+# List of particle types to filter
+filtered-particle-types:
+  # Explosion related particles
+  - "poof"
+  - "explosion"
+  - "explosion_emitter"
+  
+  # Water related particles
+  - "bubble"
+  - "bubble_pop"
+  - "bubble_column_up"
+  - "current_down"
+  - "splash"
+  - "fishing"
+  - "underwater"
+  
+  # Combat particles
+  - "crit"
+  - "enchanted_hit"
+  - "damage_indicator"
+  - "sweep_attack"
+  - "sonic_boom"
+  
+  # Smoke and cloud particles
+  - "smoke"
+  - "large_smoke"
+  - "cloud"
+  - "campfire_cosy_smoke"
+  - "campfire_signal_smoke"
+  
+  # Effect particles
+  - "effect"
+  - "instant_effect"
+  - "entity_effect"
+  - "ambient_entity_effect"
+  - "witch"
+  
+  # Dripping particles
+  - "dripping_water"
+  - "dripping_lava"
+  - "dripping_honey"
+  - "dripping_obsidian_tear"
+  
+  # Falling particles
+  - "falling_water"
+  - "falling_lava"
+  - "falling_honey"
+  - "falling_obsidian_tear"
+  - "falling_spore_blossom"
+  - "falling_dust"
+  
+  # Landing particles
+  - "landing_water"
+  - "landing_lava"
+  - "landing_honey"
+  - "landing_obsidian_tear"
+  
+  # Village particles
+  - "angry_villager"
+  - "happy_villager"
+  
+  # Environment particles
+  - "mycelium"
+  - "note"
+  - "portal"
+  - "enchant"
+  - "flame"
+  - "lava"
+  - "dust"
+  - "dust_color_transition"
+  
+  # Item particles
+  - "item"
+  - "item_slime" 
+  - "item_snowball"
+  
+  # Hearts and emotional particles
+  - "heart"
+  
+  # Block particles
+  - "block"
+  - "block_marker"
+  
+  # Special effects
+  - "firework"
+  - "soul"
+  - "soul_fire_flame"
+  - "totem_of_undying"
+  
+  # Sculk particles
+  - "sculk_charge"
+  - "sculk_charge_pop" 
+  - "sculk_soul"
+  - "shriek"
+  - "vibration"
+  
+  # Spore particles
+  - "spore_blossom_air"
+  - "crimson_spore"
+  - "warped_spore"
+  
+  # Ash particles
+  - "ash"
+  - "white_ash"
+  
+  # Misc particles
+  - "cherry_leaves"
+  - "snowflake"
+  - "electric_spark"
+  - "scrape"
+  - "wax_on"
+  - "wax_off"
+
+# Player settings storage
+players:
+  # Will be populated automatically as players use the command

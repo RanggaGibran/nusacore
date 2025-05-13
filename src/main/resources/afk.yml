@@ -1,0 +1,35 @@
+# Konfigurasi area AFK NusaTown
+# Player yang AFK di area khusus akan mendapatkan reward
+
+# Pengaturan umum
+settings:
+  enabled: true         # Aktifkan fitur AFK region
+  check-interval: 60    # Interval pengecekan reward dalam detik
+  debug: false          # Mode debug untuk troubleshooting
+  auto-afk-on-enter: true # Player otomatis AFK saat masuk region
+  maintain-movement: true  # Tetap boleh bergerak meski AFK di region
+
+# Daftar area AFK dengan reward
+afk-regions:
+  # Format: region-id: (gunakan nama region WorldGuard)
+  #   display-name: Nama yang ditampilkan ke pemain
+  #   world: Nama world tempat region berada
+  #   commands: Daftar command yang dijalankan sebagai reward (support {player} placeholder)
+  #   permission: Permission yang dibutuhkan untuk mendapatkan reward (opsional)
+  #   message: Pesan yang dikirim ke player saat mendapat reward (opsional)
+  #   minimum-time: Waktu minimum dalam detik pemain harus AFK sebelum mendapatkan reward pertama
+
+  spawn:
+    display-name: "&eArea Spawn"
+    world: "Spawn"
+    commands:
+      - "coins give {player} 2"
+    permission: "nusatown.afkregion.spawn"
+    message: "&aAnda mendapatkan &e2 coins &akarena AFK di &eArea Spawn&a!"
+    minimum-time: 60  # 1 menit minimum sebelum dapat reward pertama
+
+# Notifikasi
+notifications:
+  entered-afk-region: "&aAnda memasuki area AFK: &e{region}&a. Tetap AFK untuk mendapatkan reward."
+  left-afk-region: "&cAnda meninggalkan area AFK: &e{region}&c."
+  no-permission: "&cAnda tidak memiliki izin untuk mendapatkan reward di area ini."

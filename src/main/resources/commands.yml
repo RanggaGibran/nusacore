@@ -1,0 +1,67 @@
+# NusaTown Commands Configuration
+# This file controls what commands are shown in the /help menu
+
+categories:
+  teleport:
+    display-name: "&bTeleport"
+    commands:
+      tpa:
+        description: "Kirim permintaan teleport ke pemain lain"
+        usage: "/tpa <pemain>"
+        permission: "nusatown.command.tpa"
+      tpahere:
+        description: "Minta pemain lain teleport ke lokasi Anda"
+        usage: "/tpahere <pemain>"
+        permission: "nusatown.command.tpahere"
+      tpaccept:
+        description: "Terima permintaan teleport"
+        usage: "/tpaccept"
+        permission: "nusatown.command.tpaccept"
+      tpdeny:
+        description: "Tolak permintaan teleport"
+        usage: "/tpdeny"
+        permission: "nusatown.command.tpdeny"
+      spawn:
+        description: "Teleport ke spawn"
+        usage: "/spawn"
+      back:
+        description: "Kembali ke lokasi sebelumnya"
+        usage: "/back"
+        permission: "nusatown.command.back"
+      rtp:
+        description: "Teleport ke lokasi acak"
+        usage: "/rtp [world]"
+        permission: "nusatown.command.rtp"
+  
+  player:
+    display-name: "&aPlayer"
+    commands:
+      afk:
+        description: "Tandai status AFK"
+        usage: "/afk [alasan]"
+        permission: "nusatown.command.afk"
+      donate:
+        description: "Lihat daftar rank donasi"
+        usage: "/donate [rank]"
+      buy:
+        description: "Buka menu store"
+        usage: "/buy"
+      help:
+        description: "Tampilkan bantuan perintah"
+        usage: "/help [kategori] [halaman]"
+
+uncategorized:
+  # Perintah dari plugin lain yang ingin ditampilkan di help
+  sethome:
+    description: "Tandai lokasi home"
+    usage: "/sethome [nama]"
+  home:
+    description: "Teleport ke lokasi home"
+    usage: "/home [nama]"
+  warp:
+    description: "Teleport ke warp"
+    usage: "/warp <nama>"
+
+# Pengaturan tambahan
+settings:
+  commands-per-page: 8
