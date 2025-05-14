@@ -97,16 +97,6 @@ public class PlayerEventListener implements Listener {
         
         // Simpan lokasi kematian untuk /back
         backCommand.setPreviousLocation(player, player.getLocation());
-        
-        // Jika ingin menambahkan pesan kematian kustom
-        if (plugin.getConfig().getBoolean("messages.custom-death-message", false)) {
-            String deathMessage = ColorUtils.colorize(plugin.getConfig().getString(
-                "messages.death", 
-                "<gradient:#FF6B6B:#FF4500>{player}</gradient> <white>telah meninggal."
-            ).replace("{player}", player.getName()));
-            
-            event.setDeathMessage(deathMessage);
-        }
     }
     
     @EventHandler(priority = EventPriority.HIGH)

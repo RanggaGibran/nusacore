@@ -10,8 +10,7 @@ messages:
   first-join: "<gradient:#00A3FF:#00FFD1>{player}</gradient> &bbaru saja bergabung pertama kali!"
   join: "<gradient:#00A3FF:#00FFD1>{player}</gradient> &ftelah bergabung."
   quit: "<gradient:#FF6B6B:#FF4500>{player}</gradient> &ftelah keluar."
-  custom-death-message: true
-  death: "<gradient:#FF6B6B:#FF4500>{player}</gradient> &ftelah meninggal."
+  custom-death-message: false  # Set ke false untuk menggunakan pesan kematian vanilla
   
   # Pengaturan pesan privat
   msg-sent: "&8[&7me &8» &7{receiver}&8] &f{message}"
