@@ -2,6 +2,8 @@ package id.nusacore.managers;
 
 import id.nusacore.NusaCore;
 import id.nusacore.utils.ColorUtils;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -27,10 +29,13 @@ public class RankManager {
     @SuppressWarnings("unused")
     private String displayName; // Digunakan untuk fitur mendatang
     
-    private final Map<String, Map<String, Object>> ranks = new HashMap<>();
+    private final Map<String, Map<String, Object>> ranks;
+    private Map<String, List<String>> rankCommands;
 
     public RankManager(NusaCore plugin) {
         this.plugin = plugin;
+        this.ranks = new HashMap<>();
+        this.rankCommands = new HashMap<>();
         loadConfig();
     }
     
@@ -59,6 +64,7 @@ public class RankManager {
             
             // Load ranks
             ranks.clear();
+            rankCommands.clear(); // Clear commands map
             ConfigurationSection ranksSection = rankConfig.getConfigurationSection("ranks");
             
             if (ranksSection != null) {
@@ -81,6 +87,10 @@ public class RankManager {
                             benefits.add(ColorUtils.colorize(benefit));
                         }
                         rankData.put("benefits", benefits);
+                        
+                        // Load commands (baru)
+                        List<String> commands = rankSection.getStringList("commands");
+                        rankCommands.put(rankId, commands);
                         
                         ranks.put(rankId, rankData);
                         rankCount++;
@@ -129,6 +139,36 @@ public class RankManager {
      */
     public boolean hasRank(String rankId) {
         return ranks.containsKey(rankId);
+    }
+    
+    /**
+     * Jalankan perintah untuk rank tertentu
+     * @param player Pemain yang mendapatkan rank
+     * @param rankId ID rank
+     */
+    public void executeRankCommands(Player player, String rankId) {
+        List<String> commands = rankCommands.get(rankId);
+        if (commands == null || commands.isEmpty()) {
+            return;
+        }
+        
+        for (String command : commands) {
+            // Ganti placeholder dengan nama pemain
+            command = command.replace("{player}", player.getName());
+            
+            // Jalankan perintah sebagai console
+            plugin.getLogger().info("Executing rank command for " + player.getName() + ": " + command);
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+        }
+    }
+    
+    /**
+     * Ambil commands untuk rank tertentu (untuk melihat saja)
+     * @param rankId ID rank
+     * @return List perintah
+     */
+    public List<String> getRankCommands(String rankId) {
+        return rankCommands.getOrDefault(rankId, new ArrayList<>());
     }
     
     // Getter untuk properti setting

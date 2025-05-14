@@ -244,3 +244,6 @@ permissions:
   nusatown.votereward.execute:
     description: Izin untuk memberikan reward vote
     default: op
+  nusatown.admin.ranks:
+    description: Izin untuk mengelola dan menerapkan donation ranks
+    default: op

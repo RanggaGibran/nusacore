@@ -16,6 +16,10 @@ ranks:
       - "&a+ &fAkses ke 2 home"
       - "&a+ &fCooldown teleport 10 detik"
       - "&a+ &fPrefix [Alkemis] di chat"
+    commands:
+      - "lp user {player} parent add alkemis"
+      - "lp user {player} permission set essentials.sethome.multiple.nusatown.2"
+      - "essentials.teleport.cooldown.bypass:false"
     
   phantom:
     display-name: "&5Phantom"
@@ -27,6 +31,11 @@ ranks:
       - "&a+ &fCooldown teleport 5 detik"
       - "&a+ &fPrefix [Phantom] di chat"
       - "&a+ &fKemampuan terbang di spawn"
+    commands:
+      - "lp user {player} parent remove alkemis"
+      - "lp user {player} parent add phantom"
+      - "lp user {player} permission set essentials.sethome.multiple.nusatown.5"
+      - "lp user {player} permission set essentials.fly.spawn true"
   
   oracle:
     display-name: "&9Oracle"
@@ -39,6 +48,13 @@ ranks:
       - "&a+ &fPrefix [Oracle] di chat"
       - "&a+ &fKemampuan terbang di spawn"
       - "&a+ &fAkses ke kit Oracle"
+    commands:
+      - "lp user {player} parent remove phantom"
+      - "lp user {player} parent add oracle"
+      - "lp user {player} permission set essentials.sethome.multiple.nusatown.8"
+      - "lp user {player} permission set essentials.teleport.cooldown.bypass true"
+      - "lp user {player} permission set essentials.fly.spawn true"
+      - "lp user {player} permission set essentials.kit.oracle true"
   
   leviathan:
     display-name: "&3Leviathan"
@@ -52,6 +68,14 @@ ranks:
       - "&a+ &fKemampuan terbang di seluruh dunia"
       - "&a+ &fAkses ke kit Leviathan"
       - "&a+ &fTerbang lebih cepat"
+    commands:
+      - "lp user {player} parent remove oracle"
+      - "lp user {player} parent add leviathan"
+      - "lp user {player} permission set essentials.sethome.multiple.nusatown.12"
+      - "lp user {player} permission set essentials.teleport.cooldown.bypass true"
+      - "lp user {player} permission set essentials.fly true"
+      - "lp user {player} permission set essentials.kit.leviathan true"
+      - "lp user {player} permission set essentials.fly.speed true"
   
   celestial:
     display-name: "&e&lCelestial"
@@ -67,3 +91,13 @@ ranks:
       - "&a+ &fTerbang lebih cepat"
       - "&a+ &fPartikel custom"
       - "&a+ &fPemberitahuan VIP saat join server"
+    commands:
+      - "lp user {player} parent remove leviathan"
+      - "lp user {player} parent add celestial"
+      - "lp user {player} permission set essentials.sethome.multiple.nusatown.20"
+      - "lp user {player} permission set essentials.teleport.cooldown.bypass true"
+      - "lp user {player} permission set essentials.fly true"
+      - "lp user {player} permission set essentials.kit.* true"
+      - "lp user {player} permission set essentials.fly.speed true"
+      - "lp user {player} permission set particles.use true"
+      - "lp user {player} permission set nusatown.vipjoin true"

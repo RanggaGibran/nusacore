@@ -8,15 +8,25 @@ import net.md_5.bungee.api.chat.ComponentBuilder;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.hover.content.Text;
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.FireworkEffect;
+import org.bukkit.FireworkEffect.Type;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.meta.FireworkMeta;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 public class DonateCommand implements CommandExecutor, TabCompleter {
 
@@ -37,6 +47,45 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
         
         Player player = (Player) sender;
         
+        // Tambahkan sub-command untuk apply rank (admin only)
+        if (args.length >= 3 && args[1].equalsIgnoreCase("apply")) {
+            if (!sender.hasPermission("nusatown.admin.ranks")) {
+                sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cAnda tidak memiliki izin!"));
+                return true;
+            }
+            
+            String rankId = args[0].toLowerCase();
+            String targetName = args[2];
+            Player targetPlayer = Bukkit.getPlayer(targetName);
+            
+            if (targetPlayer == null) {
+                sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cPemain tidak ditemukan atau offline!"));
+                return true;
+            }
+            
+            if (plugin.getRankManager().hasRank(rankId)) {
+                Map<String, Object> rankData = plugin.getRankManager().getRankData(rankId);
+                String displayName = (String) rankData.get("display-name");
+                
+                // Jalankan commands
+                plugin.getRankManager().executeRankCommands(targetPlayer, rankId);
+                
+                sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aRank " + displayName + " &atelah diterapkan ke " + targetPlayer.getName()));
+                targetPlayer.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aAnda telah menerima rank " + displayName + "&a!"));
+                
+                // Efek visual dan suara
+                targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+                
+                // Spawn firework jika player online
+                spawnFirework(targetPlayer);
+                
+                return true;
+            } else {
+                sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cRank tidak ditemukan!"));
+                return true;
+            }
+        }
+
         // Mode GUI jika tidak ada argumen
         if (args.length == 0) {
             rankGUI.openMainMenu(player);
@@ -71,6 +120,32 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             }
             return true;
         }
+    }
+    
+    /**
+     * Buat firework untuk pemain saat mendapatkan rank
+     */
+    private void spawnFirework(Player player) {
+        Firework fw = player.getWorld().spawn(player.getLocation(), Firework.class);
+        FireworkMeta meta = fw.getFireworkMeta();
+        
+        // Warna random untuk firework
+        Random r = new Random();
+        int r1 = r.nextInt(255);
+        int g1 = r.nextInt(255);
+        int b1 = r.nextInt(255);
+        
+        FireworkEffect effect = FireworkEffect.builder()
+                .flicker(true)
+                .trail(true)
+                .with(FireworkEffect.Type.BALL_LARGE)
+                .withColor(Color.fromRGB(r1, g1, b1))
+                .withFade(Color.WHITE)
+                .build();
+        
+        meta.addEffect(effect);
+        meta.setPower(1);
+        fw.setFireworkMeta(meta);
     }
     
     /**
@@ -146,6 +221,31 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
             player.sendMessage(ColorUtils.colorize(benefit));
         }
         
+        // Tambahkan informasi commands untuk admin
+        if (player.hasPermission("nusatown.admin.ranks")) {
+            player.sendMessage(ColorUtils.colorize("&8&m----------------------------------------"));
+            player.sendMessage(ColorUtils.colorize("&e&lPerintah yang dijalankan (Admin Only):"));
+            
+            List<String> commands = plugin.getRankManager().getRankCommands(rankId);
+            if (commands.isEmpty()) {
+                player.sendMessage(ColorUtils.colorize("&7Tidak ada perintah yang terdaftar."));
+            } else {
+                for (String cmd : commands) {
+                    player.sendMessage(ColorUtils.colorize("&7- &f" + cmd));
+                }
+            }
+            
+            // Tambahkan tombol untuk menerapkan rank
+            TextComponent applyButton = new TextComponent(ColorUtils.colorize("&a&l[TERAPKAN RANK]"));
+            applyButton.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, 
+                    new Text(ColorUtils.colorize("&7Klik untuk menerapkan rank ini ke pemain"))));
+            applyButton.setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, 
+                    "/donate " + rankId + " apply <nama_pemain>"));
+            
+            player.sendMessage("");
+            player.spigot().sendMessage(applyButton);
+        }
+        
         // Footer
         player.sendMessage(ColorUtils.colorize("&8&m----------------------------------------"));
         
@@ -168,21 +268,28 @@ public class DonateCommand implements CommandExecutor, TabCompleter {
     
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (args.length == 1) {
-            List<String> completions = new ArrayList<>();
-            for (String rankId : plugin.getRankManager().getRankIds()) {
-                if (rankId.toLowerCase().startsWith(args[0].toLowerCase())) {
-                    completions.add(rankId);
-                }
-            }
-            return completions;
-        } else if (args.length == 2) {
-            List<String> completions = new ArrayList<>();
-            if ("gui".startsWith(args[1].toLowerCase())) {
-                completions.add("gui");
-            }
-            return completions;
+        if (!sender.hasPermission("nusatown.command.donate")) {
+            return new ArrayList<>();
         }
+        
+        if (args.length == 1) {
+            List<String> completions = new ArrayList<>(plugin.getRankManager().getRankIds());
+            completions.add("help"); // Tambahkan opsi help
+            
+            return completions.stream()
+                    .filter(s -> s.toLowerCase().startsWith(args[0].toLowerCase()))
+                    .collect(Collectors.toList());
+        } else if (args.length == 2 && sender.hasPermission("nusatown.admin.ranks")) {
+            List<String> subCommands = Arrays.asList("apply", "gui");
+            
+            return subCommands.stream()
+                    .filter(s -> s.toLowerCase().startsWith(args[1].toLowerCase()))
+                    .collect(Collectors.toList());
+        } else if (args.length == 3 && args[1].equalsIgnoreCase("apply") && sender.hasPermission("nusatown.admin.ranks")) {
+            // Tab complete untuk nama pemain
+            return null; // Biarkan bukkit menangani tab completion nama pemain
+        }
+        
         return new ArrayList<>();
     }
 }
