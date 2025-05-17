@@ -17,6 +17,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.command.CommandSender;
 
 import java.io.File;
 import java.time.LocalDateTime;
@@ -846,5 +847,181 @@ public class ChatGamesManager {
 
     public FileConfiguration getConfig() {
         return this.config;
+    }
+
+    // Tambahkan getter untuk tournamentScores dan discordIntegration
+    public Map<UUID, Integer> getTournamentScores() {
+        return tournamentScores;
+    }
+
+    public ChatGamesDiscordIntegration getDiscordIntegration() {
+        return discordIntegration;
+    }
+
+    /**
+     * Periksa apakah integrasi Discord diaktifkan
+     * @return true jika integrasi Discord diaktifkan
+     */
+    public boolean isDiscordEnabled() {
+        return discordIntegration != null && discordIntegration.isEnabled();
+    }
+
+    /**
+     * Mulai event tertentu berdasarkan ID
+     * @param eventId ID event yang akan dimulai
+     */
+    public void startEvent(String eventId) {
+        if (!events.containsKey(eventId)) {
+            plugin.getLogger().warning("ChatGames: Event ID '" + eventId + "' tidak ditemukan!");
+            return;
+        }
+        
+        if (eventActive) {
+            stopEvent(); // Hentikan event yang sedang berjalan
+        }
+        
+        Map<String, Object> eventData = events.get(eventId);
+        currentEvent = eventId;
+        eventActive = true;
+        
+        // Broadcast event start message
+        String name = (String) eventData.get("name");
+        String announcement = (String) eventData.get("announcement");
+        
+        Bukkit.broadcastMessage(ColorUtils.colorize(prefix + "&a&lEvent " + name + " &atelah dimulai!"));
+        if (announcement != null && !announcement.isEmpty()) {
+            Bukkit.broadcastMessage(ColorUtils.colorize(prefix + announcement));
+        }
+        
+        // Notifikasi Discord jika tersedia
+        if (discordIntegration != null && discordIntegration.isEnabled()) {
+            // Discord notification implementation
+        }
+        
+        plugin.getLogger().info("ChatGames: Event '" + eventId + "' dimulai.");
+    }
+
+    /**
+     * Hentikan event yang sedang berjalan
+     */
+    public void stopEvent() {
+        if (!eventActive) {
+            return;
+        }
+        
+        String previousEvent = currentEvent;
+        eventActive = false;
+        currentEvent = null;
+        
+        // Announce event end
+        if (previousEvent != null && events.containsKey(previousEvent)) {
+            String name = (String) events.get(previousEvent).get("name");
+            Bukkit.broadcastMessage(ColorUtils.colorize(prefix + "&c&lEvent " + name + " &ctelah berakhir."));
+        }
+        
+        plugin.getLogger().info("ChatGames: Event dihentikan.");
+    }
+
+    /**
+     * Tampilkan daftar event yang tersedia
+     * @param sender Pengirim perintah
+     */
+    public void listEvents(CommandSender sender) {
+        sender.sendMessage(ColorUtils.colorize("&b&l=== Daftar Event ChatGames ==="));
+        
+        if (events.isEmpty()) {
+            sender.sendMessage(ColorUtils.colorize("&cTidak ada event yang tersedia."));
+            return;
+        }
+        
+        for (Map.Entry<String, Map<String, Object>> entry : events.entrySet()) {
+            String eventId = entry.getKey();
+            Map<String, Object> eventData = entry.getValue();
+            
+            String name = (String) eventData.getOrDefault("name", eventId);
+            String description = (String) eventData.getOrDefault("description", "");
+            double multiplier = (double) eventData.getOrDefault("multiplier", 1.0);
+            
+            sender.sendMessage(ColorUtils.colorize("&e• &f" + name + 
+                (eventActive && eventId.equals(currentEvent) ? " &a[AKTIF]" : "")));
+            sender.sendMessage(ColorUtils.colorize("  &7ID: &f" + eventId + " &7| Pengali: &f" + multiplier + "x"));
+            if (!description.isEmpty()) {
+                sender.sendMessage(ColorUtils.colorize("  &7" + description));
+            }
+        }
+    }
+
+    /**
+     * Tampilkan status turnamen
+     * @param sender Pengirim perintah
+     */
+    public void showTournamentStatus(CommandSender sender) {
+        if (!tournamentActive) {
+            sender.sendMessage(ColorUtils.colorize(prefix + "&cTurnamen ChatGames tidak sedang berlangsung."));
+            return;
+        }
+        
+        // Sort players by score
+        List<Map.Entry<UUID, Integer>> sortedEntries = new ArrayList<>(tournamentScores.entrySet());
+        sortedEntries.sort(Map.Entry.<UUID, Integer>comparingByValue().reversed());
+        
+        sender.sendMessage(ColorUtils.colorize("&b&l=== Status Turnamen ChatGames ==="));
+        
+        // Calculate remaining time
+        String timeRemaining = "Unknown";
+        if (tournamentEndTime != null) {
+            LocalDateTime now = LocalDateTime.now();
+            long days = java.time.Duration.between(now, tournamentEndTime).toDays();
+            long hours = java.time.Duration.between(now, tournamentEndTime).toHours() % 24;
+            
+            if (days > 0) {
+                timeRemaining = days + " hari " + hours + " jam";
+            } else {
+                long minutes = java.time.Duration.between(now, tournamentEndTime).toMinutes() % 60;
+                timeRemaining = hours + " jam " + minutes + " menit";
+            }
+        }
+        
+        sender.sendMessage(ColorUtils.colorize("&fWaktu tersisa: &e" + timeRemaining));
+        sender.sendMessage(ColorUtils.colorize("&fJumlah peserta: &e" + tournamentScores.size() + " pemain"));
+        
+        // Display top 5 players
+        int count = 0;
+        sender.sendMessage(ColorUtils.colorize("&f&lTop 5 Pemain:"));
+        
+        for (Map.Entry<UUID, Integer> entry : sortedEntries) {
+            if (count >= 5) break;
+            
+            String playerName = Bukkit.getOfflinePlayer(entry.getKey()).getName();
+            if (playerName == null) playerName = "Unknown";
+            
+            int points = entry.getValue();
+            
+            String medal = "";
+            if (count == 0) medal = "&6&l1. ";
+            else if (count == 1) medal = "&7&l2. ";
+            else if (count == 2) medal = "&c&l3. ";
+            else medal = "&f" + (count + 1) + ". ";
+            
+            sender.sendMessage(ColorUtils.colorize(medal + "&f" + playerName + " - &e" + points + " poin"));
+            count++;
+        }
+        
+        // If sender is a player, show their position
+        if (sender instanceof Player) {
+            Player player = (Player) sender;
+            int playerScore = tournamentScores.getOrDefault(player.getUniqueId(), 0);
+            
+            // Find player position
+            int position = 1;
+            for (Map.Entry<UUID, Integer> entry : sortedEntries) {
+                if (entry.getKey().equals(player.getUniqueId())) {
+                    break;
+                }
+                position++;
+            }
+            
+            sender.sendMessage(ColorUtils.colorize("&f&lPeringkat Anda: &e#" + position + " &fdengan &e" + playerScore + " poin"));
+        }
     }
 }

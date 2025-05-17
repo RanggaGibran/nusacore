@@ -294,32 +294,30 @@ public class ChatGamesDiscordIntegration {
             return;
         }
         
-        // Gunakan API DiscordSRV
+        // Gunakan API DiscordSRV dengan try-catch untuk menghindari error jika class tidak tersedia
         try {
-            // Untuk penggunaan dengan DiscordSRV, kode ini harus disesuaikan dengan versi DiscordSRV yang digunakan
-            // Contoh implementasi dasar:
-            github.scarsz.discordsrv.DiscordSRV discord = github.scarsz.discordsrv.DiscordSRV.getPlugin();
+            // Kode ini hanya akan berjalan jika DiscordSRV tersedia dalam classpath
+            plugin.getLogger().info("Mengirim pesan ke Discord via DiscordSRV");
+            
+            // Contoh basic tanpa referensi langsung ke class DiscordSRV
+            // Gunakan refleksi untuk akses API DiscordSRV secara aman
+            Class<?> discordSRVClass = Class.forName("github.scarsz.discordsrv.DiscordSRV");
+            Object discordSRV = discordSRVClass.getMethod("getPlugin").invoke(null);
             
             if (useEmbed) {
-                // Convert color hex to Java Color
-                java.awt.Color embedColor;
-                try {
-                    embedColor = java.awt.Color.decode(colorHex);
-                } catch (Exception e) {
-                    embedColor = java.awt.Color.BLUE; // Default color
+                // Kirim embed (lebih kompleks dengan refleksi)
+                // Untuk sementara gunakan fallback ke non-embed
+                Object textChannel = discordSRVClass.getMethod("getMainTextChannel").invoke(discordSRV);
+                if (textChannel != null) {
+                    textChannel.getClass().getMethod("sendMessage", String.class).invoke(textChannel, content);
                 }
-                
-                discord.getMainTextChannel().sendMessageEmbeds(
-                    new github.scarsz.discordsrv.dependencies.jda.api.EmbedBuilder()
-                        .setDescription(content)
-                        .setColor(embedColor)
-                        .build()
-                ).queue();
             } else {
-                discord.getDestinationTextChannelForGameChannelName(discordSrvChannel)
-                       .sendMessage(content).queue();
+                // Kirim pesan teks biasa
+                Object textChannel = discordSRVClass.getMethod("getMainTextChannel").invoke(discordSRV);
+                if (textChannel != null) {
+                    textChannel.getClass().getMethod("sendMessage", String.class).invoke(textChannel, content);
+                }
             }
-            
         } catch (Exception e) {
             plugin.getLogger().warning("ChatGames: Error sending message via DiscordSRV: " + e.getMessage());
             
@@ -362,6 +360,13 @@ public class ChatGamesDiscordIntegration {
      */
     private boolean getNotificationConfig(String path, boolean defaultValue) {
         return plugin.getChatGamesManager().getConfig().getBoolean("discord.notifications." + path, defaultValue);
+    }
+    
+    /**
+     * Dapatkan konfigurasi notifikasi string
+     */
+    private String getNotificationConfig(String path, String defaultValue) {
+        return plugin.getChatGamesManager().getConfig().getString("discord.notifications." + path, defaultValue);
     }
     
     /**

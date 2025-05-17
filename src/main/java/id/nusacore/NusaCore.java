@@ -58,6 +58,7 @@ import id.nusacore.utils.ColorUtils;
 import id.nusacore.hooks.TownyHook;
 import id.nusacore.hooks.RankUpPlaceholder;
 import id.nusacore.placeholders.VotePlaceholders;
+import id.nusacore.discord.ChatGamesDiscordIntegration;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.HashMap;
@@ -197,12 +198,11 @@ public class NusaCore extends JavaPlugin {
         // Jadwalkan update leaderboard (60 menit * 20 tick/detik * 60 detik)
         getServer().getScheduler().runTaskTimerAsynchronously(this, 
             () -> {
-                if (chatGamesManager.isEnabled() && 
-                    chatGamesManager.getTournamentScores() != null && 
-                    !chatGamesManager.getTournamentScores().isEmpty()) {
-                    
-                    chatGamesManager.getDiscordIntegration().updateLeaderboard(
-                        chatGamesManager.getTournamentScores());
+                if (chatGamesManager.isEnabled() && chatGamesManager.isDiscordEnabled()) {
+                    ChatGamesDiscordIntegration discord = chatGamesManager.getDiscordIntegration();
+                    if (discord != null) {
+                        discord.updateLeaderboard(chatGamesManager.getTournamentScores());
+                    }
                 }
             }, 
             20 * 60 * 20L, // Initial delay (20 menit)
