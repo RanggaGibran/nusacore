@@ -1,0 +1,122 @@
+# ChatGames Configuration for NusaTown
+
+settings:
+  enabled: true           # Toggle untuk mengaktifkan/menonaktifkan fitur chatgames
+  interval: 15            # Interval waktu antara permainan dalam menit (0 untuk manual only)
+  duration: 60            # Waktu maksimal untuk menjawab dalam detik
+  broadcast-winner: true  # Apakah mengumumkan pemenang ke server
+  prefix: "&8[&bChatGames&8] &r"  # Prefix pesan ChatGames
+
+# Pengaturan hadiah
+rewards:
+  # Daftar kemungkinan hadiah yang akan dipilih secara acak
+  money:
+    min: 100
+    max: 500
+    chance: 50           # Peluang dalam persen
+    command: "eco give {player} {amount}"
+  tokens:
+    min: 1
+    max: 5
+    chance: 25
+    command: "tokens give {player} {amount}"
+  items:
+    chance: 25           # Peluang dalam persen
+    commands:
+      - "give {player} diamond 3"
+      - "give {player} emerald 5"
+      - "give {player} gold_ingot 10"
+      - "crate key give {player} common 1"
+
+# Game types and their questions
+games:
+  math:
+    enabled: true
+    weight: 30           # Bobot untuk kemungkinan game ini muncul
+    display-name: "Pertanyaan Matematika"
+    prefix: "&b[Matematika] &f"
+    questions:
+      - question: "Berapakah hasil dari 5 + 7?"
+        answer: "12"
+        difficulty: "easy"
+      - question: "Berapa hasil dari 15 x 3?"
+        answer: "45"
+        difficulty: "easy"
+      - question: "Berapa hasil dari 25 - 13?"
+        answer: "12"
+        difficulty: "easy"
+      - question: "Berapa hasil dari 144 ÷ 12?"
+        answer: "12"
+        difficulty: "medium"
+      - question: "Berapa akar kuadrat dari 81?"
+        answer: "9"
+        difficulty: "medium"
+      - question: "Berapa 2³?"
+        answer: "8"
+        difficulty: "easy"
+  
+  trivia:
+    enabled: true
+    weight: 30
+    display-name: "Pengetahuan Umum"
+    prefix: "&e[Trivia] &f"
+    questions:
+      - question: "Ibukota Indonesia adalah?"
+        answer: "Jakarta"
+        difficulty: "easy"
+      - question: "Siapakah presiden pertama Indonesia?"
+        answer: "Soekarno"
+        difficulty: "easy"
+      - question: "Berapakah jumlah provinsi di Indonesia?"
+        answer: "38"
+        difficulty: "medium"
+      - question: "Planet terbesar di tata surya kita adalah?"
+        answer: "Jupiter"
+        difficulty: "medium"
+      - question: "Siapa yang menemukan hukum gravitasi?"
+        answer: "Newton"
+        difficulty: "easy"
+      - question: "Minecraft dibuat oleh?"
+        answer: "Notch"
+        difficulty: "easy"
+  
+  unscramble:
+    enabled: true
+    weight: 20
+    display-name: "Acak Kata"
+    prefix: "&d[Acak Kata] &f"
+    questions:
+      - question: "obakdirem"
+        answer: "keyboard"
+        difficulty: "medium"
+      - question: "inercafmt"
+        answer: "minecraft"
+        difficulty: "easy"
+      - question: "pocumert"
+        answer: "computer"
+        difficulty: "easy"
+      - question: "jevobcata"
+        answer: "javascript"
+        difficulty: "hard"
+      - question: "leppa"
+        answer: "apple"
+        difficulty: "easy"
+  
+  first:
+    enabled: true
+    weight: 20
+    display-name: "Cepat Jawab"
+    prefix: "&a[Cepat Jawab] &f"
+    questions:
+      - question: "Ketik PERTAMA!"
+        answer: "PERTAMA"
+        difficulty: "easy"
+      - question: "Ketik GO!"
+        answer: "GO"
+        difficulty: "easy"
+      - question: "Siapa yang tercepat? Ketik SAYA!"
+        answer: "SAYA"
+        difficulty: "easy"
+      - question: "Cepat ketik NUSATOWN!"
+        answer: "NUSATOWN"
+        difficulty: "medium"

@@ -131,6 +131,11 @@ commands:
     usage: /<command>
     permission: nusatown.voteparty.admin
     aliases: [vreload]
+  chatgames:
+    description: Kelola mini-game chat
+    usage: /<command> [start|stop|reload|help]
+    permission: nusatown.command.chatgames
+    aliases: [cg, cgames]
 
 permissions:
   nusatown.admin.reload:
@@ -246,4 +251,10 @@ permissions:
     default: op
   nusatown.admin.ranks:
     description: Izin untuk mengelola dan menerapkan donation ranks
+    default: op
+  nusatown.command.chatgames:
+    description: Izin untuk melihat bantuan ChatGames
+    default: true
+  nusatown.chatgames.admin:
+    description: Izin untuk mengelola ChatGames
     default: op

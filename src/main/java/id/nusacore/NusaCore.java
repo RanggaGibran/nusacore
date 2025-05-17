@@ -28,6 +28,7 @@ import id.nusacore.commands.voting.VoteCommand;
 import id.nusacore.commands.voting.VotePartyCommand;
 import id.nusacore.commands.voting.VotePartyAdminCommand;
 import id.nusacore.commands.voting.VoteRewardCommand;
+import id.nusacore.commands.ChatGamesCommand;
 import id.nusacore.listeners.ChatListener;
 import id.nusacore.listeners.CombatListener;
 import id.nusacore.listeners.PlayerEventListener;
@@ -39,6 +40,7 @@ import id.nusacore.listeners.CommandInterceptListener;
 import id.nusacore.listeners.AFKRegionListener;
 import id.nusacore.listeners.EconomyListener;
 import id.nusacore.listeners.RankGUIListener;
+import id.nusacore.listeners.ChatGamesListener;
 import id.nusacore.managers.CombatTagManager;
 import id.nusacore.managers.TPAManager;
 import id.nusacore.managers.RankManager;
@@ -51,6 +53,7 @@ import id.nusacore.managers.TokenManager;
 import id.nusacore.managers.MessageManager;
 import id.nusacore.managers.RankupManager;
 import id.nusacore.managers.VoteManager;
+import id.nusacore.managers.ChatGamesManager;
 import id.nusacore.utils.ColorUtils;
 import id.nusacore.hooks.TownyHook;
 import id.nusacore.hooks.RankUpPlaceholder;
@@ -96,6 +99,7 @@ public class NusaCore extends JavaPlugin {
   private MessageManager messageManager;
   private RankupManager RankupManager;
   private VoteManager voteManager;
+  private ChatGamesManager chatGamesManager;
   private FileConfiguration ranksConfig;
   private Map<String, AtomicInteger> worldActiveRTPs = new HashMap<>();
   private ChatListener chatListener;
@@ -175,6 +179,12 @@ public class NusaCore extends JavaPlugin {
     
     // Initialize VoteManager
     voteManager = new VoteManager(this);
+    
+    // Initialize ChatGames manager
+    chatGamesManager = new ChatGamesManager(this);
+    getServer().getPluginManager().registerEvents(new ChatGamesListener(this), this);
+    getCommand("chatgames").setExecutor(new ChatGamesCommand(this));
+    getCommand("chatgames").setTabCompleter((ChatGamesCommand) getCommand("chatgames").getExecutor());
     
     // Register message commands
     getCommand("msg").setExecutor(new MessageCommand(this));
@@ -364,6 +374,11 @@ public class NusaCore extends JavaPlugin {
         voteManager.saveData();
     }
     
+    // Stop chat games
+    if (chatGamesManager != null) {
+        chatGamesManager.stopGame();
+    }
+    
     LOGGER.info(ColorUtils.stripColor(PREFIX) + "Plugin disabled!");
   }
   
@@ -426,6 +441,11 @@ public class NusaCore extends JavaPlugin {
     if (tpaManager != null) tpaManager.loadPreferences();
     if (rtpCommand != null) rtpCommand.loadConfig();
     if (voteManager != null) voteManager.loadConfig();
+    
+    // Reload chat games
+    if (chatGamesManager != null) {
+        chatGamesManager.loadConfig();
+    }
     
     // Use the stored ChatListener reference
     if (chatListener != null) {
@@ -634,5 +654,13 @@ public class NusaCore extends JavaPlugin {
    */
   public GUIListener getGuiListener() {
     return guiListener;
+  }
+  
+  /**
+   * Get the ChatGames manager
+   * @return ChatGames manager
+   */
+  public ChatGamesManager getChatGamesManager() {
+    return chatGamesManager;
   }
 }
