@@ -2,12 +2,18 @@ package id.nusacore.managers;
 
 import id.nusacore.NusaCore;
 import id.nusacore.utils.ColorUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.Sound;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.*;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -21,12 +27,14 @@ public class ChatGamesManager {
     private FileConfiguration config;
     private BukkitTask gameTask;
     private BukkitTask timeoutTask;
+    private BukkitTask countdownTask;
     private Random random;
     private boolean gameActive = false;
     private String currentAnswer;
     private String currentQuestion;
     private String currentGameType;
     private String prefix;
+    private BossBar timerBossBar;
 
     // Struktur data untuk pertanyaan
     private Map<String, List<GameQuestion>> games;
@@ -231,6 +239,9 @@ public class ChatGamesManager {
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0F, 1.0F);
         }
 
+        // Tampilkan efek visual saat game dimulai
+        showGameStartEffects(gameType);
+
         // Set timeout
         int duration = config.getInt("settings.duration", 60);
         timeoutTask = new BukkitRunnable() {
@@ -241,6 +252,9 @@ public class ChatGamesManager {
                 }
             }
         }.runTaskLater(plugin, duration * 20L); // Duration in seconds to ticks
+
+        // Inisialisasi boss bar untuk countdown
+        initCountdownBar(duration);
     }
 
     public void endGame(Player winner) {
@@ -253,6 +267,11 @@ public class ChatGamesManager {
         // Cancel timeout task
         if (timeoutTask != null && !timeoutTask.isCancelled()) {
             timeoutTask.cancel();
+        }
+
+        // Hapus boss bar
+        if (timerBossBar != null) {
+            timerBossBar.removeAll();
         }
 
         if (winner == null) {
@@ -328,6 +347,9 @@ public class ChatGamesManager {
             // Notify player
             player.sendMessage(ColorUtils.colorize(prefix + "&aAnda mendapatkan &f" + amount + " " +
                     (selectedRewardType.equals("money") ? "koin" : "token") + "&a!"));
+
+            // Tampilkan efek untuk pemenang
+            showWinnerEffects(player, amount, selectedRewardType.equals("money") ? "koin" : "token");
         } else if (selectedRewardType.equals("items")) {
             List<String> commands = selectedReward.getStringList("commands");
             if (!commands.isEmpty()) {
@@ -337,6 +359,9 @@ public class ChatGamesManager {
                 // Extract item name from command for notification
                 String itemName = extractItemName(command);
                 player.sendMessage(ColorUtils.colorize(prefix + "&aAnda mendapatkan &f" + itemName + "&a!"));
+
+                // Tampilkan efek untuk pemenang
+                showWinnerEffects(player, 1, itemName);
             }
         }
 
@@ -496,6 +521,269 @@ public class ChatGamesManager {
 
     public List<String> getGameTypes() {
         return new ArrayList<>(games.keySet());
+    }
+
+    /**
+     * Tampilkan efek visual saat game dimulai
+     */
+    private void showGameStartEffects(String gameType) {
+        if (!config.getBoolean("visual.game-start.title.enabled", true)) {
+            return;
+        }
+
+        String title = ColorUtils.colorize(config.getString("visual.game-start.title.text", "&b&lChatGames"));
+        String subtitle = ColorUtils.colorize(config.getString("visual.game-start.title.subtitle", "&f{game_type}")
+                .replace("{game_type}", getGameDisplayName(gameType)));
+
+        int fadeIn = config.getInt("visual.game-start.title.fade-in", 10);
+        int stay = config.getInt("visual.game-start.title.stay", 40);
+        int fadeOut = config.getInt("visual.game-start.title.fade-out", 10);
+
+        // Tampilkan title untuk semua pemain
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.sendTitle(title, subtitle, fadeIn, stay, fadeOut);
+
+            // Play sound jika diaktifkan
+            if (config.getBoolean("visual.game-start.sound.enabled", true)) {
+                String soundName = config.getString("visual.game-start.sound.sound", "BLOCK_NOTE_BLOCK_PLING");
+                float volume = (float) config.getDouble("visual.game-start.sound.volume", 1.0);
+                float pitch = (float) config.getDouble("visual.game-start.sound.pitch", 1.0);
+
+                try {
+                    Sound sound = Sound.valueOf(soundName);
+                    player.playSound(player.getLocation(), sound, volume, pitch);
+                } catch (IllegalArgumentException e) {
+                    plugin.getLogger().warning("Invalid sound: " + soundName);
+                }
+            }
+
+            // Tampilkan action bar
+            if (config.getBoolean("visual.game-start.actionbar.enabled", true)) {
+                String actionbar = ColorUtils.colorize(config.getString("visual.game-start.actionbar.text",
+                        "&7Ketik jawabannya di chat untuk menang!"));
+                player.spigot().sendMessage(ChatMessageType.ACTION_BAR,
+                        TextComponent.fromLegacyText(actionbar));
+            }
+        }
+    }
+
+    /**
+     * Inisialisasi boss bar untuk countdown
+     */
+    private void initCountdownBar(int duration) {
+        if (!config.getBoolean("visual.timer.enabled", true)) {
+            return;
+        }
+
+        // Hapus boss bar sebelumnya jika ada
+        if (timerBossBar != null) {
+            timerBossBar.removeAll();
+        }
+
+        String title = ColorUtils.colorize(config.getString("visual.timer.display", "&e&lWaktu Tersisa: &f{time}")
+                .replace("{time}", String.valueOf(duration)));
+
+        String colorName = config.getString("visual.timer.color", "YELLOW");
+        String styleName = config.getString("visual.timer.style", "SOLID");
+
+        BarColor barColor;
+        BarStyle barStyle;
+
+        try {
+            barColor = BarColor.valueOf(colorName);
+        } catch (IllegalArgumentException e) {
+            barColor = BarColor.YELLOW;
+            plugin.getLogger().warning("Invalid boss bar color: " + colorName);
+        }
+
+        try {
+            barStyle = BarStyle.valueOf(styleName);
+        } catch (IllegalArgumentException e) {
+            barStyle = BarStyle.SOLID;
+            plugin.getLogger().warning("Invalid boss bar style: " + styleName);
+        }
+
+        timerBossBar = Bukkit.createBossBar(title, barColor, barStyle);
+
+        // Tambahkan semua pemain online
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            timerBossBar.addPlayer(player);
+        }
+
+        // Jadwalkan update
+        countdownTask = new BukkitRunnable() {
+            int timeLeft = duration;
+
+            @Override
+            public void run() {
+                if (timeLeft <= 0 || !gameActive) {
+                    timerBossBar.removeAll();
+                    this.cancel();
+                    return;
+                }
+
+                timerBossBar.setProgress((double) timeLeft / duration);
+                timerBossBar.setTitle(ColorUtils.colorize(config.getString("visual.timer.display",
+                        "&e&lWaktu Tersisa: &f{time}").replace("{time}", String.valueOf(timeLeft))));
+
+                timeLeft--;
+            }
+        }.runTaskTimer(plugin, 0L, 20L);
+    }
+
+    /**
+     * Tampilkan efek untuk pemenang
+     * @param winner Pemain yang menang
+     * @param rewardAmount Jumlah hadiah
+     * @param rewardType Tipe hadiah (money, token, item)
+     */
+    private void showWinnerEffects(Player winner, int rewardAmount, String rewardType) {
+        // Title untuk pemenang
+        if (config.getBoolean("visual.winner.title.enabled", true)) {
+            String title = ColorUtils.colorize(config.getString("visual.winner.title.text", "&a&lKAMU MENANG!"));
+            String subtitle = ColorUtils.colorize(config.getString("visual.winner.title.subtitle",
+                    "&f+{reward_amount} {reward_type}")
+                    .replace("{reward_amount}", String.valueOf(rewardAmount))
+                    .replace("{reward_type}", rewardType));
+
+            int fadeIn = config.getInt("visual.winner.title.fade-in", 10);
+            int stay = config.getInt("visual.winner.title.stay", 60);
+            int fadeOut = config.getInt("visual.winner.title.fade-out", 20);
+
+            winner.sendTitle(title, subtitle, fadeIn, stay, fadeOut);
+        }
+
+        // Sound effects
+        if (config.getBoolean("visual.winner.sounds.enabled", true)) {
+            String winnerSound = config.getString("visual.winner.sounds.winner", "ENTITY_PLAYER_LEVELUP");
+            String otherSound = config.getString("visual.winner.sounds.others", "ENTITY_EXPERIENCE_ORB_PICKUP");
+
+            try {
+                // Sound untuk pemenang
+                Sound winSound = Sound.valueOf(winnerSound);
+                winner.playSound(winner.getLocation(), winSound, 1.0f, 1.0f);
+
+                // Sound untuk pemain lain
+                Sound othersSound = Sound.valueOf(otherSound);
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    if (!player.equals(winner)) {
+                        player.playSound(player.getLocation(), othersSound, 0.5f, 1.0f);
+                    }
+                }
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Invalid sound: " + e.getMessage());
+            }
+        }
+
+        // Particle effects
+        if (config.getBoolean("visual.winner.particles.enabled", true)) {
+            String particleType = config.getString("visual.winner.particles.type", "TOTEM");
+            int count = config.getInt("visual.winner.particles.count", 50);
+            int duration = config.getInt("visual.winner.particles.duration", 2);
+
+            try {
+                Particle particle = Particle.valueOf(particleType);
+                Location loc = winner.getLocation().add(0, 1, 0);
+
+                // Spawn particles selama duration detik
+                new BukkitRunnable() {
+                    int ticks = 0;
+                    final int maxTicks = duration * 4; // 4 updates per second
+
+                    @Override
+                    public void run() {
+                        if (ticks >= maxTicks) {
+                            this.cancel();
+                            return;
+                        }
+
+                        for (int i = 0; i < count / maxTicks; i++) {
+                            double offsetX = Math.random() - 0.5;
+                            double offsetY = Math.random() * 2;
+                            double offsetZ = Math.random() - 0.5;
+                            winner.getWorld().spawnParticle(particle, loc.clone().add(offsetX, offsetY, offsetZ),
+                                    1, 0, 0, 0, 0);
+                        }
+
+                        ticks++;
+                    }
+                }.runTaskTimer(plugin, 0L, 5L);
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Invalid particle type: " + particleType);
+            }
+        }
+
+        // Firework effect
+        if (config.getBoolean("visual.winner.firework.enabled", true)) {
+            List<String> types = config.getStringList("visual.winner.firework.types");
+            List<String> colorStrings = config.getStringList("visual.winner.firework.colors");
+
+            if (types.isEmpty()) {
+                types = Arrays.asList("BALL", "BALL_LARGE", "BURST", "STAR");
+            }
+
+            if (colorStrings.isEmpty()) {
+                colorStrings = Arrays.asList("255,0,0", "0,255,0", "0,0,255", "255,255,0");
+            }
+
+            // Random type
+            String typeStr = types.get(random.nextInt(types.size()));
+            FireworkEffect.Type type;
+            try {
+                type = FireworkEffect.Type.valueOf(typeStr);
+            } catch (IllegalArgumentException e) {
+                type = FireworkEffect.Type.BALL;
+            }
+
+            // Random colors
+            List<Color> colors = new ArrayList<>();
+            for (String colorStr : colorStrings) {
+                try {
+                    String[] rgb = colorStr.split(",");
+                    int r = Integer.parseInt(rgb[0].trim());
+                    int g = Integer.parseInt(rgb[1].trim());
+                    int b = Integer.parseInt(rgb[2].trim());
+                    colors.add(Color.fromRGB(r, g, b));
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Invalid color format: " + colorStr);
+                }
+            }
+
+            if (colors.isEmpty()) {
+                colors.add(Color.RED);
+            }
+
+            Location loc = winner.getLocation();
+            Firework fw = winner.getWorld().spawn(loc, Firework.class);
+            FireworkMeta meta = fw.getFireworkMeta();
+
+            FireworkEffect effect = FireworkEffect.builder()
+                    .flicker(true)
+                    .trail(true)
+                    .with(type)
+                    .withColor(colors)
+                    .withFade(Color.WHITE)
+                    .build();
+
+            meta.addEffect(effect);
+            meta.setPower(1); // Power 1 = jangkauan kecil
+            fw.setFireworkMeta(meta);
+        }
+
+        // Run special commands
+        List<String> commands = config.getStringList("visual.winner.commands");
+        for (String command : commands) {
+            command = command.replace("{player}", winner.getName());
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
+        }
+    }
+
+    private String getGameDisplayName(String gameType) {
+        ConfigurationSection gameSection = config.getConfigurationSection("games." + gameType);
+        if (gameSection != null) {
+            return ColorUtils.colorize(gameSection.getString("display-name", gameType));
+        }
+        return gameType;
     }
 
     // Helper class untuk menyimpan pertanyaan

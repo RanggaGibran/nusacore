@@ -7,6 +7,128 @@ settings:
   broadcast-winner: true  # Apakah mengumumkan pemenang ke server
   prefix: "&8[&bChatGames&8] &r"  # Prefix pesan ChatGames
 
+visual:
+  # Efek visual saat game dimulai
+  game-start:
+    title:
+      enabled: true
+      text: "&b&lChatGames"
+      subtitle: "&f{game_type}"
+      fade-in: 10  # Dalam ticks (20 ticks = 1 detik)
+      stay: 40
+      fade-out: 10
+    sound:
+      enabled: true
+      sound: "BLOCK_NOTE_BLOCK_PLING"
+      volume: 1.0
+      pitch: 1.0
+    actionbar:
+      enabled: true
+      text: "&7Ketik jawabannya di chat untuk menang!"
+  
+  # Countdown timer menggunakan boss bar
+  timer:
+    enabled: true
+    display: "&e&lWaktu Tersisa: &f{time}"
+    color: "YELLOW"  # PINK, BLUE, RED, GREEN, YELLOW, PURPLE, WHITE
+    style: "SOLID"   # SOLID, SEGMENTED_6, SEGMENTED_10, SEGMENTED_12, SEGMENTED_20
+    
+  # Efek visual untuk pemenang
+  winner:
+    title:
+      enabled: true
+      text: "&a&lKAMU MENANG!"
+      subtitle: "&f+{reward_amount} {reward_type}"
+      fade-in: 10
+      stay: 60
+      fade-out: 20
+    sounds:
+      enabled: true
+      winner: "ENTITY_PLAYER_LEVELUP"
+      others: "ENTITY_EXPERIENCE_ORB_PICKUP"
+    particles:
+      enabled: true
+      type: "TOTEM"       # Tipe partikel: TOTEM, FIREWORK, VILLAGER_HAPPY, etc.
+      count: 50           # Jumlah partikel
+      duration: 2         # Durasi dalam detik
+    firework:
+      enabled: true       # Spawn firework untuk pemenang
+      types:              # Tipe firework yang akan dipilih secara acak
+        - "BALL"
+        - "BALL_LARGE"
+        - "BURST"
+        - "STAR"
+      colors:             # Warna dalam format RGB
+        - "255,0,0"       # Merah
+        - "0,255,0"       # Hijau
+        - "0,0,255"       # Biru
+        - "255,255,0"     # Kuning
+    commands:
+      # Command khusus yang dijalankan saat pemain menang (selain rewards)
+      - "title {player} actionbar &a+1 ChatGames Point"
+  
+  # Visual khusus untuk setiap jenis game
+  game-specific:
+    math:
+      sound: "BLOCK_NOTE_BLOCK_BELL"
+      particles: "VILLAGER_HAPPY"
+      border-color: "&b"
+    trivia:
+      sound: "BLOCK_NOTE_BLOCK_CHIME"
+      particles: "SPELL_WITCH"
+      border-color: "&e"
+    unscramble:
+      sound: "BLOCK_NOTE_BLOCK_BIT"
+      particles: "CRIT_MAGIC"
+      border-color: "&d"
+    first:
+      sound: "BLOCK_NOTE_BLOCK_PLING"
+      particles: "FLAME"
+      border-color: "&a"
+    riddle:
+      sound: "BLOCK_NOTE_BLOCK_FLUTE"
+      particles: "END_ROD"
+      border-color: "&6" 
+    wordchain:
+      sound: "BLOCK_NOTE_BLOCK_HARP"
+      particles: "WATER_DROP"
+      border-color: "&3"
+    minecraft:
+      sound: "BLOCK_NOTE_BLOCK_BASS"
+      particles: "COMPOSTER"
+      border-color: "&2"
+    fillblank:
+      sound: "BLOCK_NOTE_BLOCK_BANJO"
+      particles: "DRAGON_BREATH"
+      border-color: "&5"
+
+  # Tampilan untuk scoreboard
+  scoreboard:
+    enabled: true
+    title: "&b&lChatGames"
+    lines:
+      - "&8&m---------------"
+      - "&fTurnamen: &a{tournament_status}"
+      - "&fPeringkat #1: &e{top_player}"
+      - "&fSkor Anda: &a{player_score}"
+      - "&fWaktu: &e{remaining_time}"
+      - ""
+      - "&7store.nusatown.com"
+      - "&8&m---------------"
+    update-interval: 20  # Update setiap 20 tick (1 detik)
+
+  # Tampilan untuk chat
+  chat:
+    enabled: true
+    formats:
+      question:
+        prefix: "{game_prefix}"
+        border-top: "&8&m------------------------------"
+        border-bottom: "&8&m------------------------------"
+      winner:
+        prefix: "&a&l[WINNER] &r"
+        highlight: "&e&l"  # Format untuk highlight nama pemenang
+
 events:
   enabled: true              # Toggle untuk mengaktifkan fitur events
   announcement-interval: 60  # Interval pengumuman event aktif (dalam menit)
