@@ -183,6 +183,10 @@ public class NusaCore extends JavaPlugin {
     
     // Initialize ChatGames manager
     chatGamesManager = new ChatGamesManager(this);
+    
+    // Now it's safe to initialize the Discord integration
+    chatGamesManager.initDiscordIntegration();
+    
     getServer().getPluginManager().registerEvents(new ChatGamesListener(this), this);
     getCommand("chatgames").setExecutor(new ChatGamesCommand(this));
     getCommand("chatgames").setTabCompleter((ChatGamesCommand) getCommand("chatgames").getExecutor());

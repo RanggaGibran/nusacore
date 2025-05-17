@@ -59,8 +59,6 @@ public class ChatGamesManager {
         loadConfig();
         this.loadEvents();
 
-        this.discordIntegration = new ChatGamesDiscordIntegration(plugin);
-
         // Jika interval > 0, mulai jadwal otomatis
         if (config.getBoolean("settings.enabled", true) && config.getInt("settings.interval", 15) > 0) {
             scheduleNextGame();
@@ -69,6 +67,12 @@ public class ChatGamesManager {
         if (config.getBoolean("tournaments.enabled", true) &&
             config.getBoolean("tournaments.auto-start", true)) {
             this.initTournament();
+        }
+    }
+
+    public void initDiscordIntegration() {
+        if (this.discordIntegration == null) {
+            this.discordIntegration = new ChatGamesDiscordIntegration(plugin, this.config);
         }
     }
 
