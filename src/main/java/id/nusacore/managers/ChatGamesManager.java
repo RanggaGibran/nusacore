@@ -2,6 +2,7 @@ package id.nusacore.managers;
 
 import id.nusacore.NusaCore;
 import id.nusacore.utils.ColorUtils;
+import id.nusacore.discord.ChatGamesDiscordIntegration;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.*;
@@ -35,6 +36,7 @@ public class ChatGamesManager {
     private String currentGameType;
     private String prefix;
     private BossBar timerBossBar;
+    private ChatGamesDiscordIntegration discordIntegration;
 
     // Struktur data untuk pertanyaan
     private Map<String, List<GameQuestion>> games;
@@ -55,6 +57,8 @@ public class ChatGamesManager {
         this.gameTypesByWeight = new ArrayList<>();
         loadConfig();
         this.loadEvents();
+
+        this.discordIntegration = new ChatGamesDiscordIntegration(plugin);
 
         // Jika interval > 0, mulai jadwal otomatis
         if (config.getBoolean("settings.enabled", true) && config.getInt("settings.interval", 15) > 0) {
@@ -131,6 +135,10 @@ public class ChatGamesManager {
 
         plugin.getLogger().info("ChatGames: Loaded " + games.size() + " game types and " +
                 gameTypesByWeight.size() + " weighted entries.");
+
+        if (this.discordIntegration != null) {
+            this.discordIntegration = new ChatGamesDiscordIntegration(plugin);
+        }
     }
 
     public void loadEvents() {
@@ -242,6 +250,11 @@ public class ChatGamesManager {
         // Tampilkan efek visual saat game dimulai
         showGameStartEffects(gameType);
 
+        // Kirim notifikasi ke Discord
+        if (discordIntegration != null) {
+            discordIntegration.sendGameStart(gameType, question.getQuestion());
+        }
+
         // Set timeout
         int duration = config.getInt("settings.duration", 60);
         timeoutTask = new BukkitRunnable() {
@@ -278,6 +291,11 @@ public class ChatGamesManager {
             // Game berakhir karena timeout
             Bukkit.broadcastMessage(ColorUtils.colorize(prefix + "&cWaktu habis! Tidak ada yang menjawab dengan benar."));
             Bukkit.broadcastMessage(ColorUtils.colorize(prefix + "&eJawaban yang benar: &f" + currentAnswer));
+
+            // Kirim notifikasi ke Discord
+            if (discordIntegration != null) {
+                discordIntegration.sendGameTimeout(currentGameType, currentAnswer);
+            }
         } else {
             // Game berakhir karena ada pemenang
             if (config.getBoolean("settings.broadcast-winner", true)) {
@@ -369,6 +387,11 @@ public class ChatGamesManager {
         if (tournamentActive) {
             addTournamentPoints(player.getUniqueId(), 1);
         }
+
+        // Kirim notifikasi ke Discord
+        if (discordIntegration != null) {
+            discordIntegration.sendGameWinner(player, currentGameType, amount, selectedRewardType.equals("money") ? "koin" : "token");
+        }
     }
 
     private String extractItemName(String command) {
@@ -407,6 +430,11 @@ public class ChatGamesManager {
         String startMsg = ColorUtils.colorize(config.getString("tournaments.announcement.start", ""))
                 .replace("{duration}", String.valueOf(duration));
         Bukkit.broadcastMessage(prefix + startMsg);
+
+        // Kirim notifikasi ke Discord
+        if (discordIntegration != null) {
+            discordIntegration.sendTournamentStart(duration);
+        }
 
         // Schedule tournament end
         long endTicks = duration * 24 * 60 * 60 * 20L; // Days to ticks
@@ -453,6 +481,11 @@ public class ChatGamesManager {
             if (entry.getValue() >= minAnswers) {
                 executeRewards(entry.getKey(), "participation");
             }
+        }
+
+        // Kirim hasilnya ke Discord
+        if (discordIntegration != null) {
+            discordIntegration.sendTournamentEnd(sortedEntries);
         }
 
         // Reset tournament
@@ -809,5 +842,9 @@ public class ChatGamesManager {
         public String getDifficulty() {
             return difficulty;
         }
+    }
+
+    public FileConfiguration getConfig() {
+        return this.config;
     }
 }

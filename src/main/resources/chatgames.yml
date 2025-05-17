@@ -391,3 +391,59 @@ games:
       - question: "Pulau terbesar di Indonesia adalah pulau ___"
         answer: "kalimantan"
         difficulty: "easy"
+
+discord:
+  enabled: true
+  # Metode integrasi: "webhook" (paling sederhana) atau "discordsrv" (jika plugin DiscordSRV terpasang)
+  integration-method: "webhook"
+  
+  # Konfigurasi webhook (hanya digunakan jika integration-method = webhook)
+  webhook:
+    url: "https://discord.com/api/webhooks/your-webhook-id/your-webhook-token"
+    username: "ChatGames Bot"
+    avatar-url: "https://i.imgur.com/example.png"
+    
+  # Channel ID untuk DiscordSRV (hanya digunakan jika integration-method = discordsrv)
+  channel: "chatgames"
+  
+  # Notifikasi ke Discord
+  notifications:
+    game-start:
+      enabled: true
+      format: ":game_die: **{game_type}** dimulai!\n> {question}\n\nKetik jawabannya di server Minecraft untuk menang!"
+      embed: true
+      embed-color: "#3498db"
+    
+    game-winner:
+      enabled: true
+      format: ":trophy: **{player}** memenangkan game **{game_type}**!\nHadiah: **{reward_amount} {reward_type}**"
+      embed: true
+      embed-color: "#2ecc71"
+    
+    game-timeout:
+      enabled: true
+      format: ":alarm_clock: Waktu habis! Game **{game_type}** berakhir tanpa pemenang.\nJawaban: **{answer}**"
+      embed: true
+      embed-color: "#e74c3c"
+    
+    tournament-start:
+      enabled: true
+      format: ":tada: **Turnamen ChatGames** telah dimulai! Berlangsung selama {duration} hari.\nBergabunglah di server Minecraft untuk berpartisipasi!"
+      embed: true
+      embed-color: "#f1c40f"
+    
+    tournament-end:
+      enabled: true
+      format: ":crown: **Turnamen ChatGames** telah berakhir!\n\n:first_place: **{winner}** - {points} poin\n:second_place: **{second}** - {second_points} poin\n:third_place: **{third}** - {third_points} poin"
+      embed: true
+      embed-color: "#9b59b6"
+  
+  # Leaderboard
+  leaderboard:
+    enabled: true
+    # Jumlah pemain yang ditampilkan di leaderboard
+    display-count: 10
+    # Auto-update leaderboard setiap x menit
+    update-interval: 60 # dalam menit
+    # Channel atau message ID untuk leaderboard (untuk mode discordsrv)
+    message-id: ""

@@ -186,6 +186,30 @@ public class NusaCore extends JavaPlugin {
     getCommand("chatgames").setExecutor(new ChatGamesCommand(this));
     getCommand("chatgames").setTabCompleter((ChatGamesCommand) getCommand("chatgames").getExecutor());
     
+    // Di bawah bagian yang menginisialisasi ChatGamesManager
+
+    // Inisialisasi scheduler untuk leaderboard Discord jika diaktifkan
+    if (chatGamesManager != null && 
+        chatGamesManager.getConfig().getBoolean("discord.leaderboard.enabled", false)) {
+        
+        int updateInterval = chatGamesManager.getConfig().getInt("discord.leaderboard.update-interval", 60);
+        
+        // Jadwalkan update leaderboard (60 menit * 20 tick/detik * 60 detik)
+        getServer().getScheduler().runTaskTimerAsynchronously(this, 
+            () -> {
+                if (chatGamesManager.isEnabled() && 
+                    chatGamesManager.getTournamentScores() != null && 
+                    !chatGamesManager.getTournamentScores().isEmpty()) {
+                    
+                    chatGamesManager.getDiscordIntegration().updateLeaderboard(
+                        chatGamesManager.getTournamentScores());
+                }
+            }, 
+            20 * 60 * 20L, // Initial delay (20 menit)
+            updateInterval * 20 * 60L  // Interval update dalam ticks
+        );
+    }
+    
     // Register message commands
     getCommand("msg").setExecutor(new MessageCommand(this));
     getCommand("r").setExecutor(new ReplyCommand(this));
