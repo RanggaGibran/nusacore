@@ -120,3 +120,91 @@ games:
       - question: "Cepat ketik NUSATOWN!"
         answer: "NUSATOWN"
         difficulty: "medium"
+  
+  riddle:
+    enabled: true
+    weight: 25
+    display-name: "Teka-teki"
+    prefix: "&6[Teka-teki] &f"
+    questions:
+      - question: "Semakin banyak kamu ambil, semakin besar aku. Apakah aku?"
+        answer: "lubang"
+        difficulty: "medium"
+      - question: "Aku punya mata tapi tidak bisa melihat. Apakah aku?"
+        answer: "jarum"
+        difficulty: "medium"
+      - question: "Aku bisa berjalan tanpa kaki. Apakah aku?"
+        answer: "waktu"
+        difficulty: "medium"
+      - question: "Ada dua ayah dan dua anak pergi memancing, tapi mereka hanya membawa pulang 3 ikan. Setiap orang mendapat 1 ikan. Bagaimana bisa?"
+        answer: "kakek"
+        difficulty: "hard"
+      - question: "Aku milikmu, tapi lebih sering digunakan orang lain. Apakah aku?"
+        answer: "nama"
+        difficulty: "hard"
+  
+  wordchain:
+    enabled: true
+    weight: 20
+    display-name: "Sambung Kata"
+    prefix: "&3[Sambung Kata] &f"
+    questions:
+      - question: "Sambung kata berikut: MATA..."
+        answer: "hari"
+        difficulty: "easy"
+      - question: "Sambung kata berikut: BUKU..."
+        answer: "tulis"
+        difficulty: "easy"
+      - question: "Sambung kata berikut: MEJA..."
+        answer: "makan"
+        difficulty: "easy"
+      - question: "Sambung kata berikut: RUMAH..."
+        answer: "sakit"
+        difficulty: "medium"
+      - question: "Sambung kata berikut: JALAN..."
+        answer: "kaki"
+        difficulty: "medium"
+  
+  minecraft:
+    enabled: true
+    weight: 25
+    display-name: "Minecraft Quiz"
+    prefix: "&2[Minecraft] &f"
+    questions:
+      - question: "Berapa maksimum jumlah blok dalam satu stack?"
+        answer: "64"
+        difficulty: "easy"
+      - question: "Enchantment apa yang melindungi dari serangan proyektil?"
+        answer: "projectile protection"
+        difficulty: "medium"
+      - question: "Binatang apa yang perlu dikembangbiakkan untuk mendapatkan wool?"
+        answer: "sheep"
+        difficulty: "easy"
+      - question: "Apa nama dimensi ketiga di Minecraft selain Overworld dan Nether?"
+        answer: "end"
+        difficulty: "easy"
+      - question: "Berapa jumlah maksimal level experience points?"
+        answer: "24791"
+        difficulty: "hard"
+  
+  fillblank:
+    enabled: true
+    weight: 20
+    display-name: "Isi yang Kosong"
+    prefix: "&5[Melengkapi] &f"
+    questions:
+      - question: "Satu-satunya planet yang berotasi berlawanan arah jarum jam adalah ___"
+        answer: "venus"
+        difficulty: "medium"
+      - question: "Indonesia merdeka pada tahun ___"
+        answer: "1945"
+        difficulty: "easy"
+      - question: "Bahasa pemrograman yang digunakan untuk membuat Minecraft adalah ___"
+        answer: "java"
+        difficulty: "medium"
+      - question: "Game Minecraft dibeli oleh ___ pada tahun 2014"
+        answer: "microsoft"
+        difficulty: "medium"
+      - question: "Pulau terbesar di Indonesia adalah pulau ___"
+        answer: "kalimantan"
+        difficulty: "easy"
