@@ -142,7 +142,7 @@ public class ChatGamesManager {
                 gameTypesByWeight.size() + " weighted entries.");
 
         if (this.discordIntegration != null) {
-            this.discordIntegration = new ChatGamesDiscordIntegration(plugin);
+            this.discordIntegration = new ChatGamesDiscordIntegration(plugin, this.config);
         }
     }
 
