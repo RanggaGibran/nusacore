@@ -3,6 +3,7 @@ package id.nusacore.discord;
 import id.nusacore.NusaCore;
 import id.nusacore.utils.ColorUtils;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONArray;
@@ -24,12 +25,16 @@ public class ChatGamesDiscordIntegration {
     private final String webhookUsername;
     private final String webhookAvatarUrl;
     private final String discordSrvChannel;
+    private final FileConfiguration config;
     
-    public ChatGamesDiscordIntegration(NusaCore plugin) {
+    // Modify the constructor to accept config directly
+    public ChatGamesDiscordIntegration(NusaCore plugin, FileConfiguration config) {
         this.plugin = plugin;
+        this.config = config;
         
-        ConfigurationSection config = plugin.getChatGamesManager().getConfig().getConfigurationSection("discord");
-        if (config == null) {
+        // Use the passed config instead of trying to get it from ChatGamesManager
+        ConfigurationSection discordConfig = config.getConfigurationSection("discord");
+        if (discordConfig == null) {
             this.enabled = false;
             this.integrationMethod = "webhook";
             this.webhookUrl = "";
@@ -39,12 +44,12 @@ public class ChatGamesDiscordIntegration {
             return;
         }
         
-        this.enabled = config.getBoolean("enabled", false);
-        this.integrationMethod = config.getString("integration-method", "webhook");
-        this.webhookUrl = config.getString("webhook.url", "");
-        this.webhookUsername = config.getString("webhook.username", "ChatGames Bot");
-        this.webhookAvatarUrl = config.getString("webhook.avatar-url", "");
-        this.discordSrvChannel = config.getString("channel", "chatgames");
+        this.enabled = discordConfig.getBoolean("enabled", false);
+        this.integrationMethod = discordConfig.getString("integration-method", "webhook");
+        this.webhookUrl = discordConfig.getString("webhook.url", "");
+        this.webhookUsername = discordConfig.getString("webhook.username", "ChatGames Bot");
+        this.webhookAvatarUrl = discordConfig.getString("webhook.avatar-url", "");
+        this.discordSrvChannel = discordConfig.getString("channel", "chatgames");
     }
     
     /**
@@ -341,7 +346,7 @@ public class ChatGamesDiscordIntegration {
      * Dapatkan nama tampilan untuk tipe game
      */
     private String getGameDisplayName(String gameType) {
-        ConfigurationSection gameSection = plugin.getChatGamesManager().getConfig().getConfigurationSection("games." + gameType);
+        ConfigurationSection gameSection = config.getConfigurationSection("games." + gameType);
         if (gameSection != null) {
             return ColorUtils.stripColor(ColorUtils.colorize(gameSection.getString("display-name", gameType)));
         }
@@ -352,35 +357,35 @@ public class ChatGamesDiscordIntegration {
      * Dapatkan konfigurasi notifikasi
      */
     private String getNotificationFormat(String path, String defaultValue) {
-        return plugin.getChatGamesManager().getConfig().getString("discord.notifications." + path, defaultValue);
+        return config.getString("discord.notifications." + path, defaultValue);
     }
     
     /**
      * Dapatkan konfigurasi notifikasi boolean
      */
     private boolean getNotificationConfig(String path, boolean defaultValue) {
-        return plugin.getChatGamesManager().getConfig().getBoolean("discord.notifications." + path, defaultValue);
+        return config.getBoolean("discord.notifications." + path, defaultValue);
     }
     
     /**
      * Dapatkan konfigurasi notifikasi string
      */
     private String getNotificationConfig(String path, String defaultValue) {
-        return plugin.getChatGamesManager().getConfig().getString("discord.notifications." + path, defaultValue);
+        return config.getString("discord.notifications." + path, defaultValue);
     }
     
     /**
      * Dapatkan konfigurasi leaderboard
      */
     private boolean getLeaderboardConfig(String path, boolean defaultValue) {
-        return plugin.getChatGamesManager().getConfig().getBoolean("discord.leaderboard." + path, defaultValue);
+        return config.getBoolean("discord.leaderboard." + path, defaultValue);
     }
     
     /**
      * Dapatkan konfigurasi leaderboard integer
      */
     private int getLeaderboardConfig(String path, int defaultValue) {
-        return plugin.getChatGamesManager().getConfig().getInt("discord.leaderboard." + path, defaultValue);
+        return config.getInt("discord.leaderboard." + path, defaultValue);
     }
     
     /**
