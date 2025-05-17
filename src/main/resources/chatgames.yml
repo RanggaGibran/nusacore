@@ -7,6 +7,67 @@ settings:
   broadcast-winner: true  # Apakah mengumumkan pemenang ke server
   prefix: "&8[&bChatGames&8] &r"  # Prefix pesan ChatGames
 
+events:
+  enabled: true              # Toggle untuk mengaktifkan fitur events
+  announcement-interval: 60  # Interval pengumuman event aktif (dalam menit)
+  
+  # Daftar event yang tersedia
+  types:
+    weekend:
+      enabled: true
+      name: "&6⭐ &e&lWeekend Party &6⭐"
+      description: "&fHadiah 2x lipat untuk semua chatgames di akhir pekan!"
+      days: [FRIDAY, SATURDAY, SUNDAY]  # Hari-hari event aktif
+      start-time: "18:00"               # Format 24 jam
+      end-time: "23:59"
+      multiplier: 2.0                   # Pengali hadiah
+      announcement: "&6⭐ &e&lWeekend Party &6⭐ &fsedang berlangsung! Hadiah 2x lipat untuk semua chatgames!"
+      
+    midnight:
+      enabled: true
+      name: "&5✧ &d&lMidnight Challenge &5✧"
+      description: "&fPertanyaan lebih sulit tapi hadiah lebih besar di tengah malam!"
+      days: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+      start-time: "00:00"
+      end-time: "03:00"
+      multiplier: 3.0
+      difficulty-increase: true         # Pertanyaan lebih sulit
+      announcement: "&5✧ &d&lMidnight Challenge &5✧ &fsedang berlangsung! Hadiah lebih besar dengan pertanyaan lebih sulit!"
+      
+    special:
+      enabled: false                    # Event khusus yang harus diaktifkan secara manual
+      name: "&b❄ &b&lWinter Special &b❄"
+      description: "&fEvent musim dingin dengan pertanyaan dan hadiah khusus!"
+      dates: ["2024-12-24", "2024-12-25", "2024-12-31", "2025-01-01"]  # Tanggal event
+      multiplier: 5.0
+      announcement: "&b❄ &b&lWinter Special &b❄ &fsedang berlangsung! Dapatkan hadiah spesial!"
+
+tournaments:
+  enabled: true
+  duration: 7                         # Durasi turnamen dalam hari
+  auto-start: true                    # Mulai turnamen baru otomatis setelah yang lama selesai
+  
+  announcement:
+    start: "&a&lTurnamen ChatGames telah dimulai! Berlangsung selama {duration} hari!"
+    daily: "&a&lTurnamen ChatGames: &fMasih {remaining} hari lagi! Peringkat tertinggi: &e{top_player}"
+    end: "&a&lTurnamen ChatGames telah berakhir! Pemenang: &e{winner}&f dengan &e{points} poin&f!"
+  
+  rewards:
+    first:
+      - "eco give {player} 50000"
+      - "crate key give {player} legendary 3"
+      - "broadcast &a&lSelamat kepada &e{player} &a&lsebagai juara turnamen ChatGames!"
+    second:
+      - "eco give {player} 30000"
+      - "crate key give {player} legendary 2"
+    third:
+      - "eco give {player} 15000"
+      - "crate key give {player} legendary 1"
+    participation:
+      min-answers: 5                  # Minimum jawaban benar untuk reward partisipasi
+      commands:
+        - "eco give {player} 1000"
+
 # Pengaturan hadiah
 rewards:
   # Daftar kemungkinan hadiah yang akan dipilih secara acak

@@ -67,6 +67,72 @@ public class ChatGamesCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aKonfigurasi ChatGames dimuat ulang."));
                 break;
                 
+            case "event":
+                if (!sender.hasPermission("nusatown.chatgames.admin")) {
+                    sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cAnda tidak memiliki izin untuk ini!"));
+                    return true;
+                }
+                
+                if (args.length < 2) {
+                    sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cGunakan: /" + label + " event <start|stop|list>"));
+                    return true;
+                }
+                
+                switch(args[1].toLowerCase()) {
+                    case "start":
+                        if (args.length < 3) {
+                            sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cGunakan: /" + label + " event start <eventId>"));
+                            return true;
+                        }
+                        // Start specific event
+                        plugin.getChatGamesManager().startEvent(args[2]);
+                        sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aEvent " + args[2] + " dimulai!"));
+                        break;
+                        
+                    case "stop":
+                        // Stop current event
+                        plugin.getChatGamesManager().stopEvent();
+                        sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aEvent dihentikan."));
+                        break;
+                        
+                    case "list":
+                        // List available events
+                        plugin.getChatGamesManager().listEvents(sender);
+                        break;
+                }
+                break;
+                
+            case "tournament":
+                if (!sender.hasPermission("nusatown.chatgames.admin")) {
+                    sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cAnda tidak memiliki izin untuk ini!"));
+                    return true;
+                }
+                
+                if (args.length < 2) {
+                    sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cGunakan: /" + label + " tournament <start|stop|status>"));
+                    return true;
+                }
+                
+                switch(args[1].toLowerCase()) {
+                    case "start":
+                        // Start tournament
+                        plugin.getChatGamesManager().initTournament();
+                        sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aTurnamen dimulai!"));
+                        break;
+                        
+                    case "stop":
+                        // Stop tournament
+                        plugin.getChatGamesManager().endTournament();
+                        sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aTurnamen dihentikan."));
+                        break;
+                        
+                    case "status":
+                        // Show tournament status
+                        plugin.getChatGamesManager().showTournamentStatus(sender);
+                        break;
+                }
+                break;
+                
             default:
                 sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cPerintah tidak dikenal! Gunakan /" + label + " help"));
                 break;
