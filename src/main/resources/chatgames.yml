@@ -11,10 +11,10 @@ settings:
 rewards:
   # Daftar kemungkinan hadiah yang akan dipilih secara acak
   money:
-    min: 100
-    max: 500
+    min: 3000
+    max: 7000
     chance: 50           # Peluang dalam persen
-    command: "eco give {player} {amount}"
+    command: "money give {player} {amount}"
   tokens:
     min: 1
     max: 5
@@ -26,7 +26,7 @@ rewards:
       - "give {player} diamond 3"
       - "give {player} emerald 5"
       - "give {player} gold_ingot 10"
-      - "crate key give {player} common 1"
+      - "crate key give {player} vote 1"
 
 # Game types and their questions
 games:
