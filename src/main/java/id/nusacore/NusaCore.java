@@ -397,6 +397,10 @@ public class NusaCore extends JavaPlugin {
 
   @Override
   public void onDisable() {
+    if (cryptoManager != null) {
+        getLogger().info("Saving cryptocurrency data...");
+        cryptoManager.saveMarketData();
+    }
     // Clean up combat tags
     if (combatTagManager != null) {
         combatTagManager.clearAllTags();

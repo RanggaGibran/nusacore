@@ -979,19 +979,16 @@ public class CryptoGUI implements Listener {
         }
         
         // Always cancel clicks in crypto GUI
-        if (title.contains("§a§lBeli ") || 
+        if (title.contains("§b§lCrypto Exchange") || 
+            title.contains("§e§lMarket Crypto") ||
+            title.contains("§a§lPortfolio Crypto") ||
+            title.contains("§a§lBeli ") || 
             title.contains("§c§lJual ") || 
-            title.equals("§b§lCryptocurrency Market") ||
-            title.equals("§6§lPortfolio Crypto") ||
-            title.equals("§2§lCryptocurrency") ||
+            title.contains("§b§lInfo") ||
             title.contains("§b§lGrafik ") ||
-            title.contains("§b§lInfo ")) {
+            title.contains("§e§lKonfirmasi Transaksi")) {
             
             event.setCancelled(true);
-            
-            // Debug log
-            plugin.getLogger().info("Crypto GUI click: " + player.getName() + " clicked " + 
-                clickedItem.getType() + " in " + title);
             
             // Process click based on GUI type
             String guiType = openGUITypes.get(playerId);
@@ -1067,20 +1064,21 @@ public class CryptoGUI implements Listener {
         
         String title = event.getView().getTitle();
         
-        // Batalkan semua event drag jika ini adalah GUI crypto kita
-        if (title.contains("§a§lBeli ") || 
-            title.contains("§c§lJual ") || 
-            title.equals("§b§lCryptocurrency Market") ||
-            title.equals("§6§lPortfolio Crypto") ||
-            title.equals("§2§lCryptocurrency") ||
-            title.contains("§b§lGrafik ") ||
-            title.contains("§b§lInfo ")) {
+        // Correctly match all possible Crypto GUI titles
+        if (title.contains("§b§lCrypto Exchange") || // Main menu
+            title.contains("§e§lMarket Crypto") ||  // Market view
+            title.contains("§a§lPortfolio Crypto") || // Portfolio view
+            title.contains("§a§lBeli ") ||          // Buy screen
+            title.contains("§c§lJual ") ||          // Sell screen
+            title.contains("§b§lInfo") ||           // Info screen
+            title.contains("§b§lGrafik ") ||        // Chart screen
+            title.contains("§e§lKonfirmasi Transaksi")) { // Confirmation screen
             
             event.setCancelled(true);
             return;
         }
         
-        // Tambahan check berdasarkan UUID player yang memiliki GUI terbuka
+        // Additional check based on player's open GUI type 
         UUID playerId = player.getUniqueId();
         if (openGUITypes.containsKey(playerId)) {
             event.setCancelled(true);

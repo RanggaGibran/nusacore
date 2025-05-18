@@ -42,6 +42,7 @@ public class CryptoManager {
         loadConfig();
         initializeMarket();
         scheduleMarketUpdates();
+        scheduleAutoSave(); // Add this line to enable auto-saving
     }
     
     /**
@@ -112,6 +113,20 @@ public class CryptoManager {
             100L, interval * 20L);
             
         lastMarketUpdate = LocalDateTime.now();
+    }
+    
+    /**
+     * Add a method to periodically save data (call this in the constructor)
+     */
+    private void scheduleAutoSave() {
+        // Save data every 5 minutes to prevent complete loss on crash
+        int autoSaveTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, 
+            this::saveMarketData, 
+            20 * 60 * 5, // First run after 5 minutes 
+            20 * 60 * 5  // Then every 5 minutes
+        );
+        
+        plugin.getLogger().info("Scheduled automatic crypto data saving every 5 minutes");
     }
     
     /**
@@ -210,28 +225,35 @@ public class CryptoManager {
      */
     public void saveMarketData() {
         if (cryptoConfig == null) {
+            plugin.getLogger().warning("Cannot save crypto data: config is null");
             return;
         }
         
-        // Save current prices
-        for (CryptoCurrency crypto : cryptoCurrencies.values()) {
-            cryptoConfig.set("currencies." + crypto.getId() + ".current-price", crypto.getCurrentPrice());
-        }
-        
-        // Save player investments
-        ConfigurationSection investmentsSection = cryptoConfig.createSection("investments");
-        for (Map.Entry<UUID, Map<String, Double>> entry : playerInvestments.entrySet()) {
-            String playerUuid = entry.getKey().toString();
-            Map<String, Double> investments = entry.getValue();
-            
-            for (Map.Entry<String, Double> investmentEntry : investments.entrySet()) {
-                investmentsSection.set(playerUuid + "." + investmentEntry.getKey(), investmentEntry.getValue());
-            }
-        }
-        
-        // Save to disk
         try {
+            // Save current prices
+            for (CryptoCurrency crypto : cryptoCurrencies.values()) {
+                cryptoConfig.set("currencies." + crypto.getId() + ".current-price", crypto.getCurrentPrice());
+            }
+            
+            // Save player investments - CLEAR SECTION FIRST to avoid leftovers
+            cryptoConfig.set("investments", null);
+            ConfigurationSection investmentsSection = cryptoConfig.createSection("investments");
+            
+            // Log how many players we're saving
+            plugin.getLogger().info("Saving investments for " + playerInvestments.size() + " players");
+            
+            for (Map.Entry<UUID, Map<String, Double>> entry : playerInvestments.entrySet()) {
+                String playerUuid = entry.getKey().toString();
+                Map<String, Double> investments = entry.getValue();
+                
+                for (Map.Entry<String, Double> investmentEntry : investments.entrySet()) {
+                    investmentsSection.set(playerUuid + "." + investmentEntry.getKey(), investmentEntry.getValue());
+                }
+            }
+            
+            // Save to disk
             cryptoConfig.save(cryptoFile);
+            plugin.getLogger().info("Successfully saved crypto market data");
         } catch (IOException e) {
             plugin.getLogger().log(Level.SEVERE, "Could not save crypto.yml", e);
         }
@@ -245,8 +267,12 @@ public class CryptoManager {
         
         ConfigurationSection investmentsSection = cryptoConfig.getConfigurationSection("investments");
         if (investmentsSection == null) {
+            plugin.getLogger().warning("No investments section found in crypto.yml");
             return;
         }
+        
+        int playerCount = 0;
+        int investmentCount = 0;
         
         for (String playerUuid : investmentsSection.getKeys(false)) {
             try {
@@ -260,17 +286,21 @@ public class CryptoManager {
                         double amount = playerSection.getDouble(currencyId);
                         if (amount > 0 && cryptoCurrencies.containsKey(currencyId)) {
                             investments.put(currencyId, amount);
+                            investmentCount++;
                         }
                     }
                     
                     if (!investments.isEmpty()) {
                         playerInvestments.put(uuid, investments);
+                        playerCount++;
                     }
                 }
             } catch (IllegalArgumentException e) {
                 plugin.getLogger().warning("Invalid UUID in crypto investments: " + playerUuid);
             }
         }
+        
+        plugin.getLogger().info("Loaded " + investmentCount + " crypto investments for " + playerCount + " players");
     }
     
     /**
@@ -345,6 +375,9 @@ public class CryptoManager {
             String.format("%.6f", cryptoAmount) + " " + crypto.getSymbol() + 
             " &adengan &f" + tokenAmount + " Token&a!"));
         
+        // After the transaction completes successfully, save the data
+        saveMarketData();
+        
         return true;
     }
     
@@ -410,6 +443,9 @@ public class CryptoManager {
         player.sendMessage(ColorUtils.colorize("&aAnda telah menjual &f" + 
             String.format("%.6f", cryptoAmount) + " " + crypto.getSymbol() + 
             " &adan mendapatkan &f" + tokenReturn + " Token&a!"));
+        
+        // After the transaction completes successfully, save the data
+        saveMarketData();
         
         return true;
     }

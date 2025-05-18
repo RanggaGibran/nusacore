@@ -18,9 +18,11 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.ItemFlag;
 
 import java.io.File;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TokenShopGUI implements Listener {
     
@@ -65,16 +67,28 @@ public class TokenShopGUI implements Listener {
         categories.clear();
         
         // Load shop settings
-        shopTitle = ColorUtils.colorize(config.getString("settings.title", "&8&lToken Shop"));
+        shopTitle = ColorUtils.colorize(config.getString("settings.title", "&6&lToken Shop"));
         mainMenuSize = config.getInt("settings.main-menu-size", 36);
         
-        // Create filler item
+        // Ensure mainMenuSize is multiple of 9
+        if (mainMenuSize % 9 != 0) {
+            mainMenuSize = Math.max(9, mainMenuSize - (mainMenuSize % 9));
+        }
+        
+        // Load filler item
         String fillerMaterial = config.getString("settings.filler-item", "BLACK_STAINED_GLASS_PANE");
-        fillerItem = new ItemStack(Material.valueOf(fillerMaterial));
-        ItemMeta fillerMeta = fillerItem.getItemMeta();
-        if (fillerMeta != null) {
-            fillerMeta.setDisplayName(" ");
-            fillerItem.setItemMeta(fillerMeta);
+        Material material;
+        try {
+            material = Material.valueOf(fillerMaterial.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            material = Material.BLACK_STAINED_GLASS_PANE;
+            plugin.getLogger().warning("Invalid filler item material: " + fillerMaterial + ", using default.");
+        }
+        fillerItem = new ItemStack(material);
+        ItemMeta meta = fillerItem.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(" ");
+            fillerItem.setItemMeta(meta);
         }
         
         // Load categories
@@ -83,25 +97,47 @@ public class TokenShopGUI implements Listener {
             for (String categoryId : categoriesSection.getKeys(false)) {
                 ConfigurationSection categorySection = categoriesSection.getConfigurationSection(categoryId);
                 if (categorySection != null) {
-                    ShopCategory category = new ShopCategory(
-                            categoryId,
-                            ColorUtils.colorize(categorySection.getString("name", categoryId)),
-                            categorySection.getInt("size", 36),
-                            parseItemStack(categorySection.getConfigurationSection("icon"))
-                    );
+                    String name = ColorUtils.colorize(categorySection.getString("name", categoryId));
+                    int size = categorySection.getInt("size", 36);
                     
-                    // Load items in this category
+                    // Ensure size is multiple of 9
+                    if (size % 9 != 0) {
+                        size = Math.max(9, size - (size % 9));
+                    }
+                    
+                    // Parse icon
+                    ConfigurationSection iconSection = categorySection.getConfigurationSection("icon");
+                    ItemStack icon;
+                    if (iconSection != null) {
+                        icon = parseItemStack(iconSection);
+                    } else {
+                        // Default icon
+                        icon = new ItemStack(Material.CHEST);
+                        ItemMeta iconMeta = icon.getItemMeta();
+                        if (iconMeta != null) {
+                            iconMeta.setDisplayName(name);
+                            icon.setItemMeta(iconMeta);
+                        }
+                    }
+                    
+                    // Create category
+                    ShopCategory category = new ShopCategory(categoryId, name, size, icon);
+                    
+                    // Load items
                     ConfigurationSection itemsSection = categorySection.getConfigurationSection("items");
                     if (itemsSection != null) {
                         for (String itemId : itemsSection.getKeys(false)) {
                             ConfigurationSection itemSection = itemsSection.getConfigurationSection(itemId);
                             if (itemSection != null) {
                                 ShopItem item = parseShopItem(itemSection);
-                                category.addItem(item);
+                                if (item != null) {
+                                    category.addItem(item);
+                                }
                             }
                         }
                     }
                     
+                    // Add category
                     categories.put(categoryId, category);
                 }
             }
@@ -112,44 +148,84 @@ public class TokenShopGUI implements Listener {
      * Parse shop item from configuration
      */
     private ShopItem parseShopItem(ConfigurationSection section) {
-        ItemStack itemStack = parseItemStack(section);
-        int price = section.getInt("price", 100);
+        String material = section.getString("material");
+        if (material == null) {
+            plugin.getLogger().warning("Shop item missing material!");
+            return null;
+        }
+        
+        Material itemMaterial;
+        try {
+            itemMaterial = Material.valueOf(material.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Invalid material: " + material);
+            return null;
+        }
+        
+        String name = ColorUtils.colorize(section.getString("name", "Item"));
+        int amount = section.getInt("amount", 1);
+        int price = section.getInt("price", 10);
+        List<String> lore = section.getStringList("lore").stream()
+                .map(ColorUtils::colorize)
+                .collect(Collectors.toList());
+        
+        // Build display item
+        ItemBuilder builder = new ItemBuilder(itemMaterial, amount)
+                .name(name)
+                .lore(lore);
+        
+        // Check for enchantments
+        ConfigurationSection enchantSection = section.getConfigurationSection("enchantments");
+        if (enchantSection != null) {
+            for (String enchantName : enchantSection.getKeys(false)) {
+                try {
+                    Enchantment enchant = Enchantment.getByName(enchantName.toUpperCase());
+                    if (enchant != null) {
+                        int level = enchantSection.getInt(enchantName);
+                        builder.enchant(enchant, level);
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Invalid enchantment: " + enchantName);
+                }
+            }
+        }
+        
+        // Add item flags
+        builder.flag(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_UNBREAKABLE);
+        
+        // Get commands
         List<String> commands = section.getStringList("commands");
         
-        return new ShopItem(itemStack, price, commands);
+        // Create shop item
+        return new ShopItem(builder.build(), price, commands);
     }
     
     /**
      * Parse ItemStack from configuration
      */
     private ItemStack parseItemStack(ConfigurationSection section) {
-        if (section == null) return new ItemStack(Material.STONE);
-        
-        Material material = Material.valueOf(section.getString("material", "STONE"));
-        int amount = section.getInt("amount", 1);
-        
-        ItemBuilder builder = new ItemBuilder(material, amount);
-        
-        // Set name if specified
-        if (section.contains("name")) {
-            builder.name(ColorUtils.colorize(section.getString("name")));
+        String materialName = section.getString("material", "STONE");
+        Material material;
+        try {
+            material = Material.valueOf(materialName.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            material = Material.STONE;
+            plugin.getLogger().warning("Invalid material: " + materialName + ", using STONE instead.");
         }
         
-        // Set lore if specified
-        if (section.contains("lore")) {
-            List<String> lore = section.getStringList("lore");
-            builder.lore(lore.stream().map(ColorUtils::colorize).toList());
+        ItemBuilder builder = new ItemBuilder(material)
+                .name(ColorUtils.colorize(section.getString("name", "Item")));
+        
+        // Add lore
+        List<String> lore = section.getStringList("lore");
+        if (!lore.isEmpty()) {
+            builder.lore(lore.stream().map(ColorUtils::colorize).collect(Collectors.toList()));
         }
         
-        // Add enchant glow if specified
+        // Glow effect
         if (section.getBoolean("glow", false)) {
-            builder.enchant(Enchantment.UNBREAKING, 1);
-            builder.flag(ItemFlag.HIDE_ENCHANTS);
-        }
-        
-        // Add custom model data if specified
-        if (section.contains("custom-model-data")) {
-            builder.customModelData(section.getInt("custom-model-data"));
+            builder.enchant(Enchantment.UNBREAKING, 1)
+                  .flag(ItemFlag.HIDE_ENCHANTS);
         }
         
         return builder.build();
@@ -161,33 +237,37 @@ public class TokenShopGUI implements Listener {
     public void openMainMenu(Player player) {
         Inventory inventory = Bukkit.createInventory(null, mainMenuSize, shopTitle);
         
-        // Fill with filler items
+        // Fill inventory with filler item
         GUIUtils.fillInventory(inventory, fillerItem);
         
-        // Add category icons
+        // Add category buttons
         int slot = 10;
         for (ShopCategory category : categories.values()) {
             inventory.setItem(slot, category.getIcon());
             
-            // Increment slot, skip border slots
+            // Next slot
             slot++;
             if ((slot + 1) % 9 == 0) {
-                slot += 2;
+                slot += 2; // Skip the border
+            }
+            if (slot >= mainMenuSize - 9) {
+                break;
             }
         }
         
-        // Player tokens display
+        // Display token balance
         int tokens = plugin.getTokenManager().getTokens(player);
         ItemStack tokenDisplay = new ItemBuilder(Material.GOLD_NUGGET)
                 .name(ColorUtils.colorize("&6&lTokens: &e" + tokens))
-                .lore(Collections.singletonList(ColorUtils.colorize("&7Gunakan token untuk membeli item")))
+                .lore(ColorUtils.colorize("&7Gunakan token untuk membeli item"))
                 .build();
-        inventory.setItem(inventory.getSize() - 5, tokenDisplay);
+        inventory.setItem(mainMenuSize - 5, tokenDisplay);
         
-        // Open inventory
+        // Open inventory for player
         player.openInventory(inventory);
-        playerCurrentCategory.remove(player.getUniqueId()); // Clear category tracking
-        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, 1.0f);
+        
+        // Remove from current category tracking
+        playerCurrentCategory.remove(player.getUniqueId());
     }
     
     /**
@@ -210,7 +290,7 @@ public class TokenShopGUI implements Listener {
         int slot = 10;
         for (ShopItem item : category.getItems()) {
             // Display item with price
-            ItemStack displayItem = item.getDisplayItem();
+            ItemStack displayItem = item.getDisplayItem().clone();
             ItemMeta meta = displayItem.getItemMeta();
             
             if (meta != null) {
@@ -225,13 +305,17 @@ public class TokenShopGUI implements Listener {
                 displayItem.setItemMeta(meta);
             }
             
-            // TAMBAHKAN BARIS INI: Letakkan item di inventory
+            // Place item in inventory
             inventory.setItem(slot, displayItem);
             
             // Increment slot, skip border slots
             slot++;
             if (slot % 9 == 8) {
                 slot += 2;
+            }
+            
+            if (slot >= inventory.getSize() - 9) {
+                break; // Prevent overflow of items
             }
         }
         
@@ -243,17 +327,23 @@ public class TokenShopGUI implements Listener {
                 .build();
         inventory.setItem(inventory.getSize() - 5, tokenDisplay);
         
-        // Back button
+        // Back button (ensure this is placed)
         ItemStack backButton = new ItemBuilder(Material.ARROW)
                 .name(ColorUtils.colorize("&c&lKembali"))
                 .lore(Collections.singletonList(ColorUtils.colorize("&7Kembali ke menu utama")))
                 .build();
         inventory.setItem(inventory.getSize() - 1, backButton);
         
-        // Open inventory
+        // Also add a back button in center bottom
+        if (inventory.getSize() > 45) {
+            inventory.setItem(49, backButton);
+        }
+        
+        // Open inventory for player
         player.openInventory(inventory);
+        
+        // Store current category
         playerCurrentCategory.put(player.getUniqueId(), categoryId);
-        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, 1.0f);
     }
     
     /**
@@ -287,7 +377,7 @@ public class TokenShopGUI implements Listener {
                 ItemStack icon = category.getIcon();
                 if (clickedItem.getType() == icon.getType() && 
                     clickedItem.getItemMeta() != null && 
-                    icon.getItemMeta() != null && 
+                    icon.getItemMeta() != null &&
                     clickedItem.getItemMeta().getDisplayName().equals(icon.getItemMeta().getDisplayName())) {
                     openCategory(player, category.getId());
                     return;
@@ -296,12 +386,13 @@ public class TokenShopGUI implements Listener {
         } else {
             // Handle category menu clicks
             
-            // Back button check - perbaiki dengan pemeriksaan yang lebih robust
-            if (event.getSlot() == event.getInventory().getSize() - 1 && 
+            // Back button check - improved detection
+            if ((event.getSlot() == event.getInventory().getSize() - 1 || event.getSlot() == 49) && 
                 clickedItem.getType() == Material.ARROW && 
                 clickedItem.getItemMeta() != null && 
                 clickedItem.getItemMeta().getDisplayName().contains("Kembali")) {
                 // Back button clicked
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
                 openMainMenu(player);
                 return;
             }
@@ -314,17 +405,17 @@ public class TokenShopGUI implements Listener {
                     for (ShopItem item : category.getItems()) {
                         ItemStack displayItem = item.getDisplayItem();
                         
-                        // Compare item types and names
-                        if (clickedItem.getType() == displayItem.getType() &&
+                        // Compare the clicked item with shop items
+                        if (clickedItem.getType() == displayItem.getType() && 
                             clickedItem.getItemMeta() != null && 
                             displayItem.getItemMeta() != null &&
                             clickedItem.getItemMeta().getDisplayName().equals(displayItem.getItemMeta().getDisplayName())) {
                             
-                            // Check if player has enough tokens
-                            int playerTokens = plugin.getTokenManager().getTokens(player);
+                            // Process purchase
                             int price = item.getPrice();
                             
-                            if (playerTokens < price) {
+                            // Check if player has enough tokens
+                            if (!plugin.getTokenManager().hasTokens(player, price)) {
                                 player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + 
                                         "&cAnda tidak memiliki cukup token! Dibutuhkan &e" + price + " tokens&c."));
                                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
@@ -397,10 +488,6 @@ public class TokenShopGUI implements Listener {
             this.icon = icon;
         }
         
-        public void addItem(ShopItem item) {
-            items.add(item);
-        }
-        
         public String getId() {
             return id;
         }
@@ -420,6 +507,10 @@ public class TokenShopGUI implements Listener {
         public List<ShopItem> getItems() {
             return items;
         }
+        
+        public void addItem(ShopItem item) {
+            items.add(item);
+        }
     }
     
     /**
@@ -437,7 +528,7 @@ public class TokenShopGUI implements Listener {
         }
         
         public ItemStack getDisplayItem() {
-            return displayItem.clone();
+            return displayItem;
         }
         
         public int getPrice() {
