@@ -63,6 +63,7 @@ import id.nusacore.utils.ColorUtils;
 import id.nusacore.hooks.TownyHook;
 import id.nusacore.hooks.RankUpPlaceholder;
 import id.nusacore.placeholders.VotePlaceholders;
+import id.nusacore.managers.PlayerDataManager;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.HashMap;
@@ -112,6 +113,7 @@ public class NusaCore extends JavaPlugin {
   private Map<String, AtomicInteger> worldActiveRTPs = new HashMap<>();
   private ChatListener chatListener;
   private RankGUIListener rankGUIListener;
+  private PlayerDataManager playerDataManager;
   
   public static String PREFIX;
   
@@ -369,6 +371,12 @@ public class NusaCore extends JavaPlugin {
     for (World world : getServer().getWorlds()) {
         worldActiveRTPs.put(world.getName(), new AtomicInteger(0));
     }
+    
+    // Initialize player data manager
+    playerDataManager = new PlayerDataManager(this);
+    
+    // Register listeners
+    getServer().getPluginManager().registerEvents(new ChatListener(this), this);
     
     LOGGER.info(ColorUtils.stripColor(PREFIX) + "Plugin enabled successfully!");
   }
@@ -742,5 +750,13 @@ public class NusaCore extends JavaPlugin {
    */
   public CryptoDiscordIntegration getCryptoDiscordIntegration() {
     return cryptoDiscordIntegration;
+  }
+  
+  /**
+   * Get the player data manager
+   * @return Player data manager instance
+   */
+  public PlayerDataManager getPlayerDataManager() {
+    return playerDataManager;
   }
 }

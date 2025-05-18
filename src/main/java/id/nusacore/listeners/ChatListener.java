@@ -2,6 +2,7 @@ package id.nusacore.listeners;
 
 import id.nusacore.NusaCore;
 import id.nusacore.utils.ChatFormatter;
+import id.nusacore.utils.ColorUtils;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -9,6 +10,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+
+import java.util.UUID;
 
 public class ChatListener implements Listener {
 
@@ -73,5 +76,67 @@ public class ChatListener implements Listener {
             // Log pesan ke konsol (tanpa format warna)
             plugin.getLogger().info(ChatColor.stripColor(formattedMessage.toLegacyText()));
         });
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL)
+    public void onCryptoTransactionInput(AsyncPlayerChatEvent event) {
+        Player player = event.getPlayer();
+        UUID playerId = player.getUniqueId();
+        
+        // Check if player has pending crypto input
+        String pendingBuy = (String) plugin.getPlayerDataManager().getTempData(playerId, "crypto_buy_pending");
+        String pendingSell = (String) plugin.getPlayerDataManager().getTempData(playerId, "crypto_sell_pending");
+        
+        if (pendingBuy != null || pendingSell != null) {
+            String message = event.getMessage().trim();
+            
+            // Cancel if player wants to cancel the transaction
+            if (message.equalsIgnoreCase("batal")) {
+                plugin.getPlayerDataManager().removeTempData(playerId, "crypto_buy_pending");
+                plugin.getPlayerDataManager().removeTempData(playerId, "crypto_sell_pending");
+                
+                // Cancel event and send message
+                event.setCancelled(true);
+                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cTransaksi dibatalkan."));
+                return;
+            }
+            
+            // Try to parse amount
+            try {
+                // For buying, we expect token amount
+                if (pendingBuy != null) {
+                    int amount = Integer.parseInt(message);
+                    if (amount <= 0) {
+                        player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cJumlah harus lebih besar dari 0."));
+                    } else {
+                        // Process buy with amount and crypto ID
+                        plugin.getCryptoManager().buyCrypto(player, pendingBuy, amount);
+                    }
+                    
+                    // Clear pending data
+                    plugin.getPlayerDataManager().removeTempData(playerId, "crypto_buy_pending");
+                    event.setCancelled(true);
+                }
+                // For selling, we expect crypto amount
+                else if (pendingSell != null) {
+                    double amount = Double.parseDouble(message);
+                    if (amount <= 0) {
+                        player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cJumlah harus lebih besar dari 0."));
+                    } else {
+                        // Process sell with amount and crypto ID
+                        plugin.getCryptoManager().sellCrypto(player, pendingSell, amount);
+                    }
+                    
+                    // Clear pending data
+                    plugin.getPlayerDataManager().removeTempData(playerId, "crypto_sell_pending");
+                    event.setCancelled(true);
+                }
+            } catch (NumberFormatException e) {
+                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cFormat angka tidak valid. Transaksi dibatalkan."));
+                plugin.getPlayerDataManager().removeTempData(playerId, "crypto_buy_pending");
+                plugin.getPlayerDataManager().removeTempData(playerId, "crypto_sell_pending");
+                event.setCancelled(true);
+            }
+        }
     }
 }

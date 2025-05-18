@@ -8,11 +8,13 @@ import id.nusacore.utils.ColorUtils;
 import id.nusacore.utils.GUIUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -1003,9 +1005,13 @@ public class CryptoGUI implements Listener {
     }
     
     /**
-     * Handle buy menu clicks
+     * Handle buy menu clicks dengan validasi yang lebih baik
      */
     private void handleBuyMenuClick(Player player, ItemStack clickedItem) {
+        if (clickedItem == null || !clickedItem.hasItemMeta() || !clickedItem.getItemMeta().hasDisplayName()) {
+            return;
+        }
+        
         String title = clickedItem.getItemMeta().getDisplayName();
         
         // Handle back button
@@ -1026,16 +1032,32 @@ public class CryptoGUI implements Listener {
         if (title.contains("Beli dengan")) {
             String currencyId = selectedCrypto.get(player.getUniqueId());
             if (currencyId != null) {
-                // Extract token amount from button title
                 try {
+                    // Extract token amount from button title
                     String amountStr = title.replaceAll("[^0-9]", "");
                     int tokenAmount = Integer.parseInt(amountStr);
+                    
+                    if (tokenAmount <= 0) {
+                        player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cJumlah token harus lebih besar dari 0."));
+                        return;
+                    }
+                    
+                    // Validasi apakah player memiliki cukup token
+                    int playerTokens = plugin.getTokenManager().getTokens(player);
+                    if (playerTokens < tokenAmount) {
+                        player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + 
+                            "&cKamu tidak memiliki cukup token! Dibutuhkan: &f" + tokenAmount + 
+                            " &cToken, Kamu memiliki: &f" + playerTokens + " &cToken."));
+                        return;
+                    }
                     
                     // Execute buy
                     boolean success = cryptoManager.buyCrypto(player, currencyId, tokenAmount);
                     if (success) {
                         // Close GUI after successful purchase
                         player.closeInventory();
+                        // Play success sound
+                        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
                     }
                 } catch (NumberFormatException e) {
                     player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cGagal mendapatkan jumlah token dari button."));
@@ -1048,11 +1070,12 @@ public class CryptoGUI implements Listener {
             String currencyId = selectedCrypto.get(player.getUniqueId());
             if (currencyId != null) {
                 player.closeInventory();
-                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aKetik jumlah token yang ingin Anda gunakan untuk membeli di chat:"));
                 
-                // Here you would typically use a conversation API or track this player for their next chat message
-                // For simplicity, we're just telling them to use the command
-                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&eGunakan: /crypto buy " + currencyId + " <jumlah>"));
+                // Simpan state untuk menunggu input chat
+                plugin.getPlayerDataManager().setTempData(player.getUniqueId(), "crypto_buy_pending", currencyId);
+                
+                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aKetik jumlah token yang ingin Anda gunakan untuk membeli di chat:"));
+                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&7(Ketik 'batal' untuk membatalkan)"));
             }
         }
     }
@@ -1165,6 +1188,20 @@ public class CryptoGUI implements Listener {
             openGUITypes.remove(player.getUniqueId());
             selectedCrypto.remove(player.getUniqueId());
             transactionAmounts.remove(player.getUniqueId());
+        }
+    }
+    
+    /**
+     * Handle inventory drag events
+     */
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        Player player = (Player) event.getWhoClicked();
+        UUID playerId = player.getUniqueId();
+        
+        // Batalkan semua event drag jika player memiliki GUI terbuka
+        if (openGUITypes.containsKey(playerId)) {
+            event.setCancelled(true);
         }
     }
     
