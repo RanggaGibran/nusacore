@@ -15,7 +15,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.event.inventory.InventoryView;
 import org.bukkit.event.EventPriority;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
@@ -1391,7 +1390,7 @@ public class CryptoGUI implements Listener {
      * Handle clicks in the market view
      */
     private void handleMarketClick(Player player, ItemStack clickedItem, boolean isShiftClick) {
-        if (clickedItem == null || !clickedItem.hasItemMeta() || !clickedItem.getItemMeta().getDisplayName()) {
+        if (clickedItem == null || !clickedItem.hasItemMeta() || !clickedItem.getItemMeta().hasDisplayName()) {
             return;
         }
         
@@ -1422,7 +1421,7 @@ public class CryptoGUI implements Listener {
      * Handle clicks in the portfolio view
      */
     private void handlePortfolioClick(Player player, ItemStack clickedItem, boolean isRightClick, boolean isShiftClick) {
-        if (clickedItem == null || !clickedItem.hasItemMeta() || !clickedItem.getItemMeta().getDisplayName()) {
+        if (clickedItem == null || !clickedItem.hasItemMeta() || !clickedItem.getItemMeta().hasDisplayName()) {
             return;
         }
         
@@ -1460,7 +1459,7 @@ public class CryptoGUI implements Listener {
      * Handle clicks in the cryptocurrency info view
      */
     private void handleInfoMenuClick(Player player, int slot, ItemStack clickedItem) {
-        if (clickedItem == null || !clickedItem.hasItemMeta() || !clickedItem.getItemMeta().getDisplayName()) {
+        if (clickedItem == null || !clickedItem.hasItemMeta() || !clickedItem.getItemMeta().hasDisplayName()) {
             return;
         }
         

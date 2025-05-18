@@ -91,6 +91,13 @@ public class ChartGUI implements Listener {
     }
     
     /**
+     * Alias untuk showChart (untuk kompatibilitas)
+     */
+    public void openChartGUI(Player player, String currencyId, String period) {
+        showChart(player, currencyId, period);
+    }
+    
+    /**
      * Create info item for cryptocurrency
      */
     private ItemStack createInfoItem(CryptoCurrency crypto) {
