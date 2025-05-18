@@ -63,6 +63,7 @@ import id.nusacore.utils.ColorUtils;
 import id.nusacore.hooks.TownyHook;
 import id.nusacore.hooks.RankUpPlaceholder;
 import id.nusacore.placeholders.VotePlaceholders;
+import id.nusacore.placeholders.CryptoPlaceholders;
 import id.nusacore.managers.PlayerDataManager;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -249,6 +250,12 @@ public class NusaCore extends JavaPlugin {
         new RankUpPlaceholder(this).register();
         new VotePlaceholders(this).register();
         getLogger().info("Vote placeholders registered with PlaceholderAPI!");
+    }
+    
+    // Register crypto placeholders if PlaceholderAPI is enabled
+    if (placeholderAPIEnabled) {
+        getLogger().info("Registering Crypto placeholders with PlaceholderAPI");
+        new CryptoPlaceholders(this).register();
     }
     
     // Register commands
