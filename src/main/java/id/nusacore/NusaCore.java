@@ -57,11 +57,12 @@ import id.nusacore.managers.VoteManager;
 import id.nusacore.managers.ChatGamesManager;
 import id.nusacore.crypto.CryptoManager;
 import id.nusacore.crypto.gui.CryptoGUI;
+import id.nusacore.discord.ChatGamesDiscordIntegration;
+import id.nusacore.discord.CryptoDiscordIntegration;
 import id.nusacore.utils.ColorUtils;
 import id.nusacore.hooks.TownyHook;
 import id.nusacore.hooks.RankUpPlaceholder;
 import id.nusacore.placeholders.VotePlaceholders;
-import id.nusacore.discord.ChatGamesDiscordIntegration;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.HashMap;
@@ -106,6 +107,7 @@ public class NusaCore extends JavaPlugin {
   private ChatGamesManager chatGamesManager;
   private CryptoManager cryptoManager;
   private CryptoGUI cryptoGUI;
+  private CryptoDiscordIntegration cryptoDiscordIntegration;
   private FileConfiguration ranksConfig;
   private Map<String, AtomicInteger> worldActiveRTPs = new HashMap<>();
   private ChatListener chatListener;
@@ -226,6 +228,9 @@ public class NusaCore extends JavaPlugin {
     
     // Initialize crypto GUI
     cryptoGUI = new CryptoGUI(this);
+    
+    // Initialize crypto discord integration
+    cryptoDiscordIntegration = new CryptoDiscordIntegration(this);
     
     // Register message commands
     getCommand("msg").setExecutor(new MessageCommand(this));
@@ -423,6 +428,11 @@ public class NusaCore extends JavaPlugin {
     // Cleanup CryptoManager
     if (cryptoManager != null) {
         cryptoManager.onDisable();
+    }
+    
+    // Cleanup discord integration
+    if (cryptoDiscordIntegration != null) {
+        cryptoDiscordIntegration.cleanup();
     }
     
     LOGGER.info(ColorUtils.stripColor(PREFIX) + "Plugin disabled!");
@@ -724,5 +734,13 @@ public class NusaCore extends JavaPlugin {
    */
   public CryptoGUI getCryptoGUI() {
     return cryptoGUI;
+  }
+  
+  /**
+   * Get the Crypto Discord Integration
+   * @return Crypto Discord Integration
+   */
+  public CryptoDiscordIntegration getCryptoDiscordIntegration() {
+    return cryptoDiscordIntegration;
   }
 }

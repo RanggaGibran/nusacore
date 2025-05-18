@@ -69,6 +69,54 @@ tokens:
   name: "Token"             # Nama token tunggal
   name-plural: "Tokens"     # Nama token jamak
 
+# Crypto Discord Integration
+
+crypto:
+  discord:
+    enabled: false  # Set to true when ready to activate
+    integration-method: webhook  # webhook or discordsrv
+    
+    # Webhook configuration
+    webhook:
+      url: https://discord.com/api/webhooks/your-webhook-id/your-webhook-token
+      username: Crypto Market Bot
+      avatar-url: https://i.imgur.com/example.png
+    
+    # Channel ID for DiscordSRV
+    channel: crypto
+    
+    # Market update settings
+    market-updates:
+      enabled: true
+      interval: 60  # minutes
+      embed-color: "#3498db"  # Discord blue
+    
+    # Price alert settings
+    price-alerts:
+      enabled: true
+      threshold: 5.0  # percent
+      embed-color: "#e74c3c"  # Discord red
+    
+    # Transaction notification settings
+    transactions:
+      enabled: true
+      min-value: 100  # minimum transaction value to notify
+      embed-color: "#2ecc71"  # Discord green
+    
+    # Message formats
+    messages:
+      market-update:
+        title: ":chart_with_upwards_trend: **Crypto Market Update**"
+        format: "**{symbol}** ({name}): {price} Tokens {change}"
+      
+      price-alert:
+        title: ":rotating_light: **Significant Price Movement**"
+        format: "**{symbol}** has {direction} by **{change_percent}%** in the last update!\nCurrent price: {price} Tokens"
+      
+      transaction:
+        buy: ":inbox_tray: **{player}** purchased **{amount} {symbol}** for {value} Tokens"
+        sell: ":outbox_tray: **{player}** sold **{amount} {symbol}** for {value} Tokens"
+
 # Pengaturan voting dan VoteParty
 voting:
   url: "vote.nusatown.com"

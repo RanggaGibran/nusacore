@@ -158,6 +158,11 @@ public class CryptoManager {
             Bukkit.broadcastMessage(ColorUtils.colorize(changes.toString()));
         }
         
+        // Notify Discord if integration is enabled
+        if (plugin.getCryptoDiscordIntegration() != null && plugin.getCryptoDiscordIntegration().isEnabled()) {
+            plugin.getCryptoDiscordIntegration().checkPriceAlerts();
+        }
+        
         // Save updated prices to config
         saveMarketData();
         
@@ -328,6 +333,13 @@ public class CryptoManager {
         // Save data
         saveMarketData();
         
+        // Notify Discord if integration is enabled
+        if (plugin.getCryptoDiscordIntegration() != null && plugin.getCryptoDiscordIntegration().isEnabled()) {
+            plugin.getCryptoDiscordIntegration().sendTransactionNotification(
+                player, currencyId, cryptoAmount, tokenAmount, true
+            );
+        }
+        
         // Send confirmation message
         player.sendMessage(ColorUtils.colorize("&aAnda telah membeli &f" + 
             String.format("%.6f", cryptoAmount) + " " + crypto.getSymbol() + 
@@ -386,6 +398,13 @@ public class CryptoManager {
         
         // Save data
         saveMarketData();
+        
+        // Notify Discord if integration is enabled
+        if (plugin.getCryptoDiscordIntegration() != null && plugin.getCryptoDiscordIntegration().isEnabled()) {
+            plugin.getCryptoDiscordIntegration().sendTransactionNotification(
+                player, currencyId, cryptoAmount, tokenReturn, false
+            );
+        }
         
         // Send confirmation message
         player.sendMessage(ColorUtils.colorize("&aAnda telah menjual &f" + 
