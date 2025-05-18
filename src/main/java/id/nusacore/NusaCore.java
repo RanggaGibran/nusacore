@@ -29,6 +29,7 @@ import id.nusacore.commands.voting.VotePartyCommand;
 import id.nusacore.commands.voting.VotePartyAdminCommand;
 import id.nusacore.commands.voting.VoteRewardCommand;
 import id.nusacore.commands.ChatGamesCommand;
+import id.nusacore.commands.CryptoCommand;
 import id.nusacore.listeners.ChatListener;
 import id.nusacore.listeners.CombatListener;
 import id.nusacore.listeners.PlayerEventListener;
@@ -54,6 +55,8 @@ import id.nusacore.managers.MessageManager;
 import id.nusacore.managers.RankupManager;
 import id.nusacore.managers.VoteManager;
 import id.nusacore.managers.ChatGamesManager;
+import id.nusacore.crypto.CryptoManager;
+import id.nusacore.crypto.gui.CryptoGUI;
 import id.nusacore.utils.ColorUtils;
 import id.nusacore.hooks.TownyHook;
 import id.nusacore.hooks.RankUpPlaceholder;
@@ -101,6 +104,8 @@ public class NusaCore extends JavaPlugin {
   private RankupManager RankupManager;
   private VoteManager voteManager;
   private ChatGamesManager chatGamesManager;
+  private CryptoManager cryptoManager;
+  private CryptoGUI cryptoGUI;
   private FileConfiguration ranksConfig;
   private Map<String, AtomicInteger> worldActiveRTPs = new HashMap<>();
   private ChatListener chatListener;
@@ -213,6 +218,14 @@ public class NusaCore extends JavaPlugin {
             updateInterval * 20 * 60L  // Interval update dalam ticks
         );
     }
+    
+    // Initialize crypto manager
+    cryptoManager = new CryptoManager(this);
+    getCommand("crypto").setExecutor(new CryptoCommand(this));
+    getCommand("crypto").setTabCompleter((CryptoCommand) getCommand("crypto").getExecutor());
+    
+    // Initialize crypto GUI
+    cryptoGUI = new CryptoGUI(this);
     
     // Register message commands
     getCommand("msg").setExecutor(new MessageCommand(this));
@@ -405,6 +418,11 @@ public class NusaCore extends JavaPlugin {
     // Stop chat games
     if (chatGamesManager != null) {
         chatGamesManager.stopGame();
+    }
+    
+    // Cleanup CryptoManager
+    if (cryptoManager != null) {
+        cryptoManager.onDisable();
     }
     
     LOGGER.info(ColorUtils.stripColor(PREFIX) + "Plugin disabled!");
@@ -690,5 +708,21 @@ public class NusaCore extends JavaPlugin {
    */
   public ChatGamesManager getChatGamesManager() {
     return chatGamesManager;
+  }
+  
+  /**
+   * Get the Crypto manager
+   * @return Crypto manager
+   */
+  public CryptoManager getCryptoManager() {
+    return cryptoManager;
+  }
+  
+  /**
+   * Get the Crypto GUI manager
+   * @return Crypto GUI manager
+   */
+  public CryptoGUI getCryptoGUI() {
+    return cryptoGUI;
   }
 }

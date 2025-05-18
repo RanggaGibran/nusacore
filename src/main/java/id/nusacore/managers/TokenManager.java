@@ -182,6 +182,16 @@ public class TokenManager {
     }
     
     /**
+     * Check if player has enough tokens
+     * @param player The player
+     * @param amount Amount to check
+     * @return true if player has enough tokens
+     */
+    public boolean hasTokens(OfflinePlayer player, int amount) {
+        return getTokens(player) >= amount;
+    }
+    
+    /**
      * Format tokens with name
      * @param amount Token amount
      * @return Formatted token string

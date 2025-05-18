@@ -136,6 +136,10 @@ commands:
     usage: /<command> [start|stop|reload|help]
     permission: nusatown.command.chatgames
     aliases: [cg, cgames]
+  crypto:
+    description: Kelola investasi crypto
+    usage: /<command> [market|info|buy|sell|portfolio]
+    aliases: [cripto, koin]
 
 permissions:
   nusatown.admin.reload:
@@ -257,4 +261,10 @@ permissions:
     default: true
   nusatown.chatgames.admin:
     description: Izin untuk mengelola ChatGames
+    default: op
+  nusatown.command.crypto:
+    description: Izin untuk menggunakan fitur crypto
+    default: true
+  nusatown.command.crypto.admin:
+    description: Izin untuk mengelola sistem crypto (admin)
     default: op

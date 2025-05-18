@@ -1,0 +1,41 @@
+# Konfigurasi Staking NusaCore
+
+# Pengaturan umum staking
+settings:
+  enabled: true
+  rewards-interval: 3600  # Interval pengecekan reward dalam detik (1 jam)
+
+# APY Rates (Annual Percentage Yield) untuk setiap currency
+rates:
+  btc: 8.0   # 8% APY untuk Bitcoin
+  eth: 7.5   # 7.5% APY untuk Ethereum
+  bnb: 10.0  # 10% APY untuk Binance Coin
+  sol: 12.0  # 12% APY untuk Solana
+  usdt: 5.0  # 5% APY untuk Tether (lebih stabil, reward lebih kecil)
+  doge: 15.0 # 15% APY untuk Dogecoin (lebih berisiko, reward lebih besar)
+
+# Periode lock dalam hari
+lock-periods:
+  btc: 14    # 14 hari untuk Bitcoin
+  eth: 10    # 10 hari untuk Ethereum
+  bnb: 7     # 7 hari untuk Binance Coin
+  sol: 14    # 14 hari untuk Solana
+  usdt: 5    # 5 hari untuk Tether
+  doge: 21   # 21 hari untuk Dogecoin
+
+# Minimum stake amount
+minimums:
+  btc: 0.001
+  eth: 0.005
+  bnb: 0.01
+  sol: 0.05
+  usdt: 0.1
+  doge: 1.0
+
+# Data staking pemain (akan diisi otomatis)
+stakes:
+  # Format: uuid-pemain:
+  #   currencyId:
+  #     amount: jumlah yang di-stake
+  #     start-date: waktu mulai stake
+  #     end-date: waktu selesai stake

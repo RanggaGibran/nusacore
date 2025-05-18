@@ -1,0 +1,101 @@
+# Konfigurasi Mining NusaCore
+# Sistem ini memungkinkan pemain untuk mendapatkan crypto dari menambang blok tertentu
+
+settings:
+  enabled: true
+  global-rate-limit: 50  # Maksimum mining events per menit (untuk mencegah lag server)
+
+# Konfigurasi reward untuk setiap jenis blok
+block-rewards:
+  DIAMOND_ORE:
+    currency: btc
+    base-amount: 0.0001
+    chance: 100.0  # Persentase chance untuk mendapatkan reward (100% = selalu)
+    min-level: 1   # Level mining minimum untuk mendapatkan reward ini
+  
+  DEEPSLATE_DIAMOND_ORE:
+    currency: btc
+    base-amount: 0.00015
+    chance: 100.0
+    min-level: 1
+  
+  EMERALD_ORE:
+    currency: eth
+    base-amount: 0.0002
+    chance: 100.0
+    min-level: 2
+  
+  DEEPSLATE_EMERALD_ORE:
+    currency: eth
+    base-amount: 0.0003
+    chance: 100.0
+    min-level: 2
+  
+  ANCIENT_DEBRIS:
+    currency: btc
+    base-amount: 0.001
+    chance: 100.0
+    min-level: 5
+  
+  GOLD_ORE:
+    currency: bnb
+    base-amount: 0.0005
+    chance: 80.0
+    min-level: 1
+  
+  DEEPSLATE_GOLD_ORE:
+    currency: bnb
+    base-amount: 0.00075
+    chance: 80.0
+    min-level: 1
+  
+  NETHER_GOLD_ORE:
+    currency: bnb
+    base-amount: 0.00025
+    chance: 50.0
+    min-level: 1
+  
+  LAPIS_ORE:
+    currency: sol
+    base-amount: 0.0001
+    chance: 75.0
+    min-level: 1
+  
+  DEEPSLATE_LAPIS_ORE:
+    currency: sol
+    base-amount: 0.00015
+    chance: 75.0
+    min-level: 1
+  
+  REDSTONE_ORE:
+    currency: doge
+    base-amount: 0.01
+    chance: 60.0
+    min-level: 1
+  
+  DEEPSLATE_REDSTONE_ORE:
+    currency: doge
+    base-amount: 0.015
+    chance: 60.0
+    min-level: 1
+  
+  IRON_ORE:
+    currency: usdt
+    base-amount: 0.001
+    chance: 40.0
+    min-level: 1
+  
+  DEEPSLATE_IRON_ORE:
+    currency: usdt
+    base-amount: 0.0015
+    chance: 40.0
+    min-level: 1
+
+# Data player mining (akan diisi otomatis)
+player-stats:
+  # Format: uuid-pemain:
+  #   blocks-mined: jumlah total blok yang ditambang
+  #   level: level mining pemain
+  #   xp: experience point saat ini
+  #   daily-mined: jumlah crypto yang sudah ditambang hari ini
+  #   last-day: tanggal terakhir mining (untuk reset harian)

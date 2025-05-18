@@ -1,0 +1,67 @@
+# Konfigurasi Crypto NusaTown
+
+settings:
+  enabled: true
+  update-interval: 600  # Interval update market dalam detik (default: 10 menit)
+  broadcast-changes: true  # Broadcast perubahan harga ke semua pemain
+  min-investment: 10  # Investasi minimum dalam token
+
+# Daftar crypto currency yang tersedia
+currencies:
+  btc:
+    name: "Bitcoin"
+    symbol: "BTC"
+    initial-price: 1000.0
+    volatility: 0.10  # 10% volatilitas
+    min-price: 100.0
+    max-price: 10000.0
+    risk: "HIGH"  # LOW, MEDIUM, HIGH, EXTREME
+    
+  eth:
+    name: "Ethereum"
+    symbol: "ETH"
+    initial-price: 500.0
+    volatility: 0.08
+    min-price: 50.0
+    max-price: 5000.0
+    risk: "MEDIUM"
+    
+  bnb:
+    name: "Binance Coin"
+    symbol: "BNB"
+    initial-price: 250.0
+    volatility: 0.06
+    min-price: 25.0
+    max-price: 2500.0
+    risk: "MEDIUM"
+  
+  doge:
+    name: "Dogecoin"
+    symbol: "DOGE"
+    initial-price: 20.0
+    volatility: 0.20
+    min-price: 1.0
+    max-price: 1000.0
+    risk: "EXTREME"
+    
+  usdt:
+    name: "Tether"
+    symbol: "USDT"
+    initial-price: 100.0
+    volatility: 0.02
+    min-price: 90.0
+    max-price: 110.0
+    risk: "LOW"
+  
+  sol:
+    name: "Solana"
+    symbol: "SOL" 
+    initial-price: 300.0
+    volatility: 0.15
+    min-price: 30.0
+    max-price: 3000.0
+    risk: "HIGH"
+
+# Data investasi pemain (diisi otomatis)
+investments:
+  # Format: uuid-pemain: { cryptoId: jumlah, ... }
