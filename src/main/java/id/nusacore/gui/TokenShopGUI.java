@@ -16,7 +16,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -34,6 +33,7 @@ public class TokenShopGUI implements Listener {
     
     private final Map<UUID, String> playerCurrentCategory = new HashMap<>();
     
+    // Tambahkan logging untuk membantu debugging
     public TokenShopGUI(NusaCore plugin) {
         this.plugin = plugin;
         
@@ -42,6 +42,11 @@ public class TokenShopGUI implements Listener {
         
         // Load config
         loadConfig();
+        
+        plugin.getLogger().info("TokenShopGUI initialized with " + categories.size() + " categories.");
+        for (ShopCategory category : categories.values()) {
+            plugin.getLogger().info("Category: " + category.getId() + " with " + category.getItems().size() + " items.");
+        }
     }
     
     /**
@@ -220,11 +225,12 @@ public class TokenShopGUI implements Listener {
                 displayItem.setItemMeta(meta);
             }
             
+            // TAMBAHKAN BARIS INI: Letakkan item di inventory
             inventory.setItem(slot, displayItem);
             
             // Increment slot, skip border slots
             slot++;
-            if ((slot + 1) % 9 == 0) {
+            if (slot % 9 == 8) {
                 slot += 2;
             }
         }
@@ -277,15 +283,25 @@ public class TokenShopGUI implements Listener {
         if (!title.contains(" - ")) {
             // Find which category was clicked
             for (ShopCategory category : categories.values()) {
-                if (clickedItem.isSimilar(category.getIcon())) {
+                // Verifikasi berdasarkan nama dan material
+                ItemStack icon = category.getIcon();
+                if (clickedItem.getType() == icon.getType() && 
+                    clickedItem.getItemMeta() != null && 
+                    icon.getItemMeta() != null && 
+                    clickedItem.getItemMeta().getDisplayName().equals(icon.getItemMeta().getDisplayName())) {
                     openCategory(player, category.getId());
                     return;
                 }
             }
         } else {
             // Handle category menu clicks
-            if (event.getSlot() == event.getInventory().getSize() - 1 && clickedItem.getType() == Material.ARROW) {
-                // Back button
+            
+            // Back button check - perbaiki dengan pemeriksaan yang lebih robust
+            if (event.getSlot() == event.getInventory().getSize() - 1 && 
+                clickedItem.getType() == Material.ARROW && 
+                clickedItem.getItemMeta() != null && 
+                clickedItem.getItemMeta().getDisplayName().contains("Kembali")) {
+                // Back button clicked
                 openMainMenu(player);
                 return;
             }
@@ -298,24 +314,25 @@ public class TokenShopGUI implements Listener {
                     for (ShopItem item : category.getItems()) {
                         ItemStack displayItem = item.getDisplayItem();
                         
-                        // Compare item types, names and amounts 
+                        // Compare item types and names
                         if (clickedItem.getType() == displayItem.getType() &&
-                                clickedItem.getItemMeta() != null && 
-                                displayItem.getItemMeta() != null &&
-                                clickedItem.getItemMeta().getDisplayName().equals(displayItem.getItemMeta().getDisplayName())) {
+                            clickedItem.getItemMeta() != null && 
+                            displayItem.getItemMeta() != null &&
+                            clickedItem.getItemMeta().getDisplayName().equals(displayItem.getItemMeta().getDisplayName())) {
                             
                             // Check if player has enough tokens
                             int playerTokens = plugin.getTokenManager().getTokens(player);
-                            if (playerTokens < item.getPrice()) {
+                            int price = item.getPrice();
+                            
+                            if (playerTokens < price) {
                                 player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + 
-                                        "&cAnda tidak memiliki cukup token! Dibutuhkan &e" + item.getPrice() + " tokens&c."));
+                                        "&cAnda tidak memiliki cukup token! Dibutuhkan &e" + price + " tokens&c."));
                                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                                 return;
                             }
                             
                             // Process purchase
-                            boolean success = plugin.getTokenManager().removeTokens(player, item.getPrice());
-                            if (success) {
+                            if (plugin.getTokenManager().removeTokens(player, price)) {
                                 // Execute commands
                                 for (String cmd : item.getCommands()) {
                                     String processedCmd = cmd.replace("{player}", player.getName());
@@ -324,13 +341,14 @@ public class TokenShopGUI implements Listener {
                                 
                                 // Success message
                                 player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + 
-                                        "&aPembelian berhasil! &e" + item.getPrice() + " tokens &atelah digunakan."));
+                                        "&aPembelian berhasil! &e" + price + " tokens &atelah digunakan."));
                                 player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
                                 
-                                // Update tokens display and refresh GUI
+                                // Refresh inventory to update token count
                                 openCategory(player, categoryId);
                             } else {
-                                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cTerjadi kesalahan saat memproses pembelian."));
+                                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + 
+                                        "&cGagal memproses pembelian. Silakan coba lagi."));
                                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                             }
                             return;

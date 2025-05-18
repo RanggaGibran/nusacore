@@ -112,6 +112,18 @@ public class GUIUtils {
     }
     
     /**
+     * Mengisi seluruh inventory dengan item tertentu
+     * 
+     * @param inventory Inventory yang akan diisi
+     * @param item Item untuk mengisi inventory
+     */
+    public static void fillInventory(Inventory inventory, ItemStack item) {
+        for (int i = 0; i < inventory.getSize(); i++) {
+            inventory.setItem(i, item.clone());
+        }
+    }
+    
+    /**
      * Buat item "Kembali" untuk navigasi
      * 
      * @return ItemStack tombol kembali

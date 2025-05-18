@@ -15,6 +15,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryView;
+import org.bukkit.event.EventPriority;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -869,311 +871,174 @@ public class CryptoGUI implements Listener {
     }
     
     /**
+     * Open a confirmation GUI for important transactions
+     */
+    private void openConfirmationGUI(Player player, String action, String currencyId, double amount) {
+        CryptoCurrency crypto = cryptoManager.getCryptocurrency(currencyId);
+        if (crypto == null) {
+            player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cCryptocurrency tidak ditemukan!"));
+            return;
+        }
+        
+        Inventory inventory = Bukkit.createInventory(null, 27, "§e§lKonfirmasi Transaksi");
+        GUIUtils.fillBorder(inventory, Material.BLACK_STAINED_GLASS_PANE);
+        
+        // Display transaction info
+        List<String> infoLore = new ArrayList<>();
+        
+        if (action.equals("buy")) {
+            int tokenAmount = transactionAmounts.getOrDefault(player.getUniqueId(), 0);
+            double cryptoAmount = tokenAmount / crypto.getCurrentPrice();
+            
+            infoLore.add("§7Anda akan membeli:");
+            infoLore.add("§f" + String.format("%.6f", cryptoAmount) + " " + crypto.getSymbol());
+            infoLore.add("");
+            infoLore.add("§7Dengan harga:");
+            infoLore.add("§f" + tokenAmount + " Tokens");
+            infoLore.add("");
+            infoLore.add("§7Harga per unit: §f" + formatPrice(crypto.getCurrentPrice()) + " Tokens");
+        } else if (action.equals("sell")) {
+            double tokenAmount = amount * crypto.getCurrentPrice();
+            
+            infoLore.add("§7Anda akan menjual:");
+            infoLore.add("§f" + String.format("%.6f", amount) + " " + crypto.getSymbol());
+            infoLore.add("");
+            infoLore.add("§7Akan mendapatkan:");
+            infoLore.add("§f" + String.format("%.1f", tokenAmount) + " Tokens");
+            infoLore.add("");
+            infoLore.add("§7Harga per unit: §f" + formatPrice(crypto.getCurrentPrice()) + " Tokens");
+        } else if (action.equals("sell_all")) {
+            double currentAmount = cryptoManager.getPlayerInvestment(player, currencyId);
+            double tokenAmount = currentAmount * crypto.getCurrentPrice();
+            
+            infoLore.add("§7Anda akan menjual seluruh:");
+            infoLore.add("§f" + String.format("%.6f", currentAmount) + " " + crypto.getSymbol());
+            infoLore.add("");
+            infoLore.add("§7Akan mendapatkan:");
+            infoLore.add("§f" + String.format("%.1f", tokenAmount) + " Tokens");
+            infoLore.add("");
+            infoLore.add("§7Harga per unit: §f" + formatPrice(crypto.getCurrentPrice()) + " Tokens");
+        }
+        
+        inventory.setItem(13, createItem(
+            CRYPTO_MATERIALS.getOrDefault(currencyId, Material.GOLD_NUGGET),
+            "§f" + crypto.getSymbol() + " §7- §f" + crypto.getName(),
+            infoLore,
+            false
+        ));
+        
+        // Confirm button
+        inventory.setItem(11, createItem(
+            Material.LIME_WOOL,
+            "§a§lKonfirmasi",
+            Arrays.asList(
+                "§7Klik untuk mengkonfirmasi transaksi"
+            ),
+            false
+        ));
+        
+        // Cancel button
+        inventory.setItem(15, createItem(
+            Material.RED_WOOL,
+            "§c§lBatalkan",
+            Arrays.asList(
+                "§7Klik untuk membatalkan transaksi"
+            ),
+            false
+        ));
+        
+        player.openInventory(inventory);
+        
+        // Store transaction details
+        selectedCrypto.put(player.getUniqueId(), currencyId);
+        if (action.equals("buy")) {
+            openGUITypes.put(player.getUniqueId(), "CONFIRM_BUY");
+        } else if (action.equals("sell")) {
+            openGUITypes.put(player.getUniqueId(), "CONFIRM_SELL");
+            transactionAmounts.put(player.getUniqueId(), (int) amount);
+        } else if (action.equals("sell_all")) {
+            openGUITypes.put(player.getUniqueId(), "CONFIRM_SELL_ALL");
+        }
+    }
+    
+    /**
      * Handle inventory click events
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player)) {
+        if (!(event.getWhoClicked() instanceof Player player)) {
             return;
         }
         
-        Player player = (Player) event.getWhoClicked();
         UUID playerId = player.getUniqueId();
+        String title = event.getView().getTitle();
         ItemStack clickedItem = event.getCurrentItem();
         
-        // Check if player has a GUI open
-        if (!openGUITypes.containsKey(playerId) || clickedItem == null || clickedItem.getType() == Material.AIR) {
+        // Skip if clicked nothing
+        if (clickedItem == null || clickedItem.getType() == Material.AIR) {
             return;
         }
         
-        // Cancel the event to prevent taking items
-        event.setCancelled(true);
-        
-        String guiType = openGUITypes.get(playerId);
-        
-        // Handle main menu clicks
-        if (guiType.equals(MAIN_MENU)) {
-            handleMainMenuClick(player, event.getSlot(), clickedItem);
-        }
-        // Handle market menu clicks
-        else if (guiType.equals(MARKET)) {
-            handleMarketClick(player, clickedItem, event.isShiftClick());
-        }
-        // Handle portfolio clicks
-        else if (guiType.equals(PORTFOLIO)) {
-            handlePortfolioClick(player, clickedItem, event.isRightClick(), event.isShiftClick());
-        }
-        // Handle buy menu clicks
-        else if (guiType.equals(BUY)) {
-            handleBuyMenuClick(player, clickedItem);
-        }
-        // Handle sell menu clicks
-        else if (guiType.equals(SELL)) {
-            handleSellMenuClick(player, clickedItem, event.isRightClick());
-        }
-        // Handle info menu clicks
-        else if (guiType.equals(INFO)) {
-            handleInfoMenuClick(player, event.getSlot(), clickedItem);
-        }
-    }
-    
-    /**
-     * Handle main menu clicks
-     */
-    private void handleMainMenuClick(Player player, int slot, ItemStack clickedItem) {
-        switch (slot) {
-            case 10: // Market
-                openMarket(player);
-                break;
-            case 12: // Portfolio
-                openPortfolio(player);
-                break;
-            case 14: // Buy Crypto
-                openBuyCryptoMenu(player);
-                break;
-            case 16: // Sell Crypto
-                openSellCryptoMenu(player);
-                break;
-            case 31: // Info
-                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aGunakan crypto di server untuk berbagai manfaat ekonomi. "
-                    + "Harga market diperbarui secara berkala, jadi strategi waktu pembelian dan penjualan Anda!"));
-                break;
-            case 32: // Close
-                player.closeInventory();
-                break;
-        }
-    }
-    
-    /**
-     * Handle market menu clicks
-     */
-    private void handleMarketClick(Player player, ItemStack clickedItem, boolean isShiftClick) {
-        String title = clickedItem.getItemMeta().getDisplayName();
-        
-        // Handle back button
-        if (title.contains("Kembali")) {
-            openMainMenu(player);
-            return;
-        }
-        
-        // Find which crypto was clicked
-        for (CryptoCurrency crypto : cryptoManager.getAllCryptocurrencies()) {
-            if (title.contains(crypto.getSymbol())) {
-                if (isShiftClick) {
-                    // Show chart
-                    chartGUI.showChart(player, crypto.getId(), "24h");
-                } else {
-                    // Show info
-                    openCryptoInfo(player, crypto.getId());
-                }
-                return;
-            }
-        }
-    }
-    
-    /**
-     * Handle portfolio menu clicks
-     */
-    private void handlePortfolioClick(Player player, ItemStack clickedItem, boolean isRightClick, boolean isShiftClick) {
-        String title = clickedItem.getItemMeta().getDisplayName();
-        
-        // Handle back button
-        if (title.contains("Kembali")) {
-            openMainMenu(player);
-            return;
-        }
-        
-        // Find which crypto was clicked
-        Map<String, Double> investments = cryptoManager.getPlayerInvestments(player);
-        for (Map.Entry<String, Double> entry : investments.entrySet()) {
-            String currencyId = entry.getKey();
-            CryptoCurrency crypto = cryptoManager.getCryptocurrency(currencyId);
+        // Always cancel clicks in crypto GUI
+        if (title.contains("§a§lBeli ") || 
+            title.contains("§c§lJual ") || 
+            title.equals("§b§lCryptocurrency Market") ||
+            title.equals("§6§lPortfolio Crypto") ||
+            title.equals("§2§lCryptocurrency") ||
+            title.contains("§b§lGrafik ") ||
+            title.contains("§b§lInfo ")) {
             
-            if (crypto != null && title.contains(crypto.getSymbol())) {
-                if (isShiftClick) {
-                    // Show chart
-                    chartGUI.showChart(player, currencyId, "24h");
-                } else if (isRightClick) {
-                    // Show info
-                    openCryptoInfo(player, currencyId);
-                } else {
-                    // Sell crypto
-                    openSellAmountGUI(player, currencyId);
-                }
-                return;
-            }
-        }
-    }
-    
-    /**
-     * Handle buy menu clicks dengan validasi yang lebih baik
-     */
-    private void handleBuyMenuClick(Player player, ItemStack clickedItem) {
-        if (clickedItem == null || !clickedItem.hasItemMeta() || !clickedItem.getItemMeta().hasDisplayName()) {
-            return;
-        }
-        
-        String title = clickedItem.getItemMeta().getDisplayName();
-        
-        // Handle back button
-        if (title.contains("Kembali")) {
-            openMainMenu(player);
-            return;
-        }
-        
-        // Find which crypto was clicked
-        for (CryptoCurrency crypto : cryptoManager.getAllCryptocurrencies()) {
-            if (title.contains(crypto.getSymbol())) {
-                openBuyAmountGUI(player, crypto.getId());
-                return;
-            }
-        }
-        
-        // Handle buy button clicks (already in buy amount GUI)
-        if (title.contains("Beli dengan")) {
-            String currencyId = selectedCrypto.get(player.getUniqueId());
-            if (currencyId != null) {
-                try {
-                    // Extract token amount from button title
-                    String amountStr = title.replaceAll("[^0-9]", "");
-                    int tokenAmount = Integer.parseInt(amountStr);
-                    
-                    if (tokenAmount <= 0) {
-                        player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cJumlah token harus lebih besar dari 0."));
-                        return;
-                    }
-                    
-                    // Validasi apakah player memiliki cukup token
-                    int playerTokens = plugin.getTokenManager().getTokens(player);
-                    if (playerTokens < tokenAmount) {
-                        player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + 
-                            "&cKamu tidak memiliki cukup token! Dibutuhkan: &f" + tokenAmount + 
-                            " &cToken, Kamu memiliki: &f" + playerTokens + " &cToken."));
-                        return;
-                    }
-                    
-                    // Execute buy
-                    boolean success = cryptoManager.buyCrypto(player, currencyId, tokenAmount);
-                    if (success) {
-                        // Close GUI after successful purchase
-                        player.closeInventory();
-                        // Play success sound
-                        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
-                    }
-                } catch (NumberFormatException e) {
-                    player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cGagal mendapatkan jumlah token dari button."));
-                }
-            }
-        }
-        
-        // Handle custom amount button
-        if (title.contains("Jumlah Kustom")) {
-            String currencyId = selectedCrypto.get(player.getUniqueId());
-            if (currencyId != null) {
-                player.closeInventory();
-                
-                // Simpan state untuk menunggu input chat
-                plugin.getPlayerDataManager().setTempData(player.getUniqueId(), "crypto_buy_pending", currencyId);
-                
-                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aKetik jumlah token yang ingin Anda gunakan untuk membeli di chat:"));
-                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&7(Ketik 'batal' untuk membatalkan)"));
-            }
-        }
-    }
-    
-    /**
-     * Handle sell menu clicks
-     */
-    private void handleSellMenuClick(Player player, ItemStack clickedItem, boolean isRightClick) {
-        String title = clickedItem.getItemMeta().getDisplayName();
-        
-        // Handle back button
-        if (title.contains("Kembali")) {
-            openMainMenu(player);
-            return;
-        }
-        
-        // Find which crypto was clicked
-        Map<String, Double> investments = cryptoManager.getPlayerInvestments(player);
-        for (Map.Entry<String, Double> entry : investments.entrySet()) {
-            String currencyId = entry.getKey();
-            CryptoCurrency crypto = cryptoManager.getCryptocurrency(currencyId);
+            event.setCancelled(true);
             
-            if (crypto != null && title.contains(crypto.getSymbol())) {
-                if (isRightClick) {
-                    // Partial sell
-                    openSellAmountGUI(player, currencyId);
-                } else {
-                    // Sell all
-                    boolean success = cryptoManager.sellCrypto(player, currencyId, 0); // 0 means sell all
-                    if (success) {
-                        player.closeInventory();
-                    }
-                }
-                return;
-            }
-        }
-        
-        // Handle sell button clicks (already in sell amount GUI)
-        if (title.contains("Jual ") && !title.contains("Cryptocurrency")) {
-            String currencyId = selectedCrypto.get(player.getUniqueId());
-            if (currencyId != null) {
-                try {
-                    // Extract amount from the title
-                    String amountText = title.substring(title.indexOf("Jual ") + 5);
-                    if (amountText.contains("(")) {
-                        amountText = amountText.substring(0, amountText.indexOf("(")).trim();
-                    }
-                    double amount = Double.parseDouble(amountText);
-                    
-                    // Execute sell
-                    boolean success = cryptoManager.sellCrypto(player, currencyId, amount);
-                    if (success) {
-                        player.closeInventory();
-                    }
-                } catch (Exception e) {
-                    player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cGagal mendapatkan jumlah crypto dari button."));
+            // Debug log
+            plugin.getLogger().info("Crypto GUI click: " + player.getName() + " clicked " + 
+                clickedItem.getType() + " in " + title);
+            
+            // Process click based on GUI type
+            String guiType = openGUITypes.get(playerId);
+            if (guiType == null) {
+                // Try to determine from title
+                if (title.equals("§2§lCryptocurrency")) {
+                    guiType = MAIN_MENU;
+                } else if (title.equals("§b§lCryptocurrency Market")) {
+                    guiType = MARKET;
+                } else if (title.equals("§6§lPortfolio Crypto")) {
+                    guiType = PORTFOLIO;
+                } else if (title.contains("§a§lBeli ")) {
+                    guiType = BUY;
+                } else if (title.contains("§c§lJual ")) {
+                    guiType = SELL;
+                } else if (title.contains("§b§lInfo ")) {
+                    guiType = INFO;
                 }
             }
-        }
-        
-        // Handle custom amount button
-        if (title.contains("Jumlah Kustom")) {
-            String currencyId = selectedCrypto.get(player.getUniqueId());
-            if (currencyId != null) {
-                player.closeInventory();
-                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aKetik jumlah yang ingin Anda jual di chat:"));
-                
-                // Here you would typically use a conversation API or track this player for their next chat message
-                // For simplicity, we're just telling them to use the command
-                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&eGunakan: /crypto sell " + currencyId + " <jumlah>"));
+            
+            // Handle click based on GUI type
+            switch (guiType) {
+                case MAIN_MENU:
+                    handleMainMenuClick(player, event.getSlot(), clickedItem);
+                    break;
+                case MARKET:
+                    handleMarketClick(player, clickedItem, event.isShiftClick());
+                    break;
+                case PORTFOLIO:
+                    handlePortfolioClick(player, clickedItem, event.isRightClick(), event.isShiftClick());
+                    break;
+                case BUY:
+                    handleBuyMenuClick(player, clickedItem);
+                    break;
+                case SELL:
+                    handleSellMenuClick(player, clickedItem, event.isRightClick());
+                    break;
+                case INFO:
+                    handleInfoMenuClick(player, event.getSlot(), clickedItem);
+                    break;
+                case "CONFIRM_BUY":
+                case "CONFIRM_SELL":
+                case "CONFIRM_SELL_ALL":
+                    handleConfirmationClick(player, clickedItem);
+                    break;
             }
-        }
-    }
-    
-    /**
-     * Handle info menu clicks
-     */
-    private void handleInfoMenuClick(Player player, int slot, ItemStack clickedItem) {
-        String currencyId = selectedCrypto.get(player.getUniqueId());
-        if (currencyId == null) {
-            player.closeInventory();
-            return;
-        }
-        
-        switch (slot) {
-            case 20: // Buy button
-                openBuyAmountGUI(player, currencyId);
-                break;
-            case 22: // Chart button
-                chartGUI.showChart(player, currencyId, "24h");
-                break;
-            case 24: // Sell button
-                openSellAmountGUI(player, currencyId);
-                break;
-            case 31: // Back button
-                openMarket(player);
-                break;
         }
     }
     
@@ -1193,14 +1058,31 @@ public class CryptoGUI implements Listener {
     }
     
     /**
-     * Handle inventory drag events
+     * Handle inventory drag events with improved checks
      */
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     public void onInventoryDrag(InventoryDragEvent event) {
-        Player player = (Player) event.getWhoClicked();
-        UUID playerId = player.getUniqueId();
+        if (!(event.getWhoClicked() instanceof Player player)) {
+            return;
+        }
         
-        // Batalkan semua event drag jika player memiliki GUI terbuka
+        String title = event.getView().getTitle();
+        
+        // Batalkan semua event drag jika ini adalah GUI crypto kita
+        if (title.contains("§a§lBeli ") || 
+            title.contains("§c§lJual ") || 
+            title.equals("§b§lCryptocurrency Market") ||
+            title.equals("§6§lPortfolio Crypto") ||
+            title.equals("§2§lCryptocurrency") ||
+            title.contains("§b§lGrafik ") ||
+            title.contains("§b§lInfo ")) {
+            
+            event.setCancelled(true);
+            return;
+        }
+        
+        // Tambahan check berdasarkan UUID player yang memiliki GUI terbuka
+        UUID playerId = player.getUniqueId();
         if (openGUITypes.containsKey(playerId)) {
             event.setCancelled(true);
         }
@@ -1271,6 +1153,339 @@ public class CryptoGUI implements Listener {
                 break;
             default:
                 openMainMenu(player);
+                break;
+        }
+    }
+    
+    /**
+     * Handle buy menu clicks dengan validasi dan konfirmasi
+     */
+    private void handleBuyMenuClick(Player player, ItemStack clickedItem) {
+        if (clickedItem == null || !clickedItem.hasItemMeta() || !clickedItem.getItemMeta().hasDisplayName()) {
+            return;
+        }
+        
+        String title = clickedItem.getItemMeta().getDisplayName();
+        
+        // Handle back button
+        if (title.contains("Kembali")) {
+            openMainMenu(player);
+            return;
+        }
+        
+        // Find which crypto was clicked
+        for (CryptoCurrency crypto : cryptoManager.getAllCryptocurrencies()) {
+            if (title.contains(crypto.getSymbol())) {
+                openBuyAmountGUI(player, crypto.getId());
+                return;
+            }
+        }
+        
+        // Handle buy button clicks (already in buy amount GUI)
+        if (title.contains("Beli dengan")) {
+            String currencyId = selectedCrypto.get(player.getUniqueId());
+            if (currencyId != null) {
+                try {
+                    // Extract token amount from button title
+                    String amountStr = title.replaceAll("[^0-9]", "");
+                    int tokenAmount = Integer.parseInt(amountStr);
+                    
+                    if (tokenAmount <= 0) {
+                        player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cJumlah token harus lebih besar dari 0."));
+                        return;
+                    }
+                    
+                    // Validasi apakah player memiliki cukup token
+                    int playerTokens = plugin.getTokenManager().getTokens(player);
+                    if (playerTokens < tokenAmount) {
+                        player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + 
+                            "&cKamu tidak memiliki cukup token! Dibutuhkan: &f" + tokenAmount + 
+                            " &cToken, Kamu memiliki: &f" + playerTokens + " &cToken."));
+                        return;
+                    }
+                    
+                    // Store token amount and open confirmation
+                    transactionAmounts.put(player.getUniqueId(), tokenAmount);
+                    openConfirmationGUI(player, "buy", currencyId, 0);
+                } catch (NumberFormatException e) {
+                    player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cGagal mendapatkan jumlah token dari button."));
+                }
+            }
+        }
+        
+        // Handle custom amount button
+        if (title.contains("Jumlah Kustom")) {
+            String currencyId = selectedCrypto.get(player.getUniqueId());
+            if (currencyId != null) {
+                player.closeInventory();
+                
+                // Simpan state untuk menunggu input chat
+                plugin.getPlayerDataManager().setTempData(player.getUniqueId(), "crypto_buy_pending", currencyId);
+                
+                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aKetik jumlah token yang ingin Anda gunakan untuk membeli di chat:"));
+                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&7(Ketik 'batal' untuk membatalkan)"));
+            }
+        }
+    }
+    
+    /**
+     * Handle sell menu clicks with confirmation
+     */
+    private void handleSellMenuClick(Player player, ItemStack clickedItem, boolean isRightClick) {
+        if (clickedItem == null || !clickedItem.hasItemMeta() || !clickedItem.getItemMeta().hasDisplayName()) {
+            return;
+        }
+        
+        String title = clickedItem.getItemMeta().getDisplayName();
+        
+        // Handle back button
+        if (title.contains("Kembali")) {
+            openMainMenu(player);
+            return;
+        }
+        
+        // Find which crypto was clicked
+        Map<String, Double> investments = cryptoManager.getPlayerInvestments(player);
+        for (Map.Entry<String, Double> entry : investments.entrySet()) {
+            String currencyId = entry.getKey();
+            CryptoCurrency crypto = cryptoManager.getCryptocurrency(currencyId);
+            
+            // Check if this is the crypto being sold
+            if (crypto != null && title.contains(crypto.getSymbol())) {
+                if (isRightClick) {
+                    // Partial sell - show amount selection GUI
+                    openSellAmountGUI(player, currencyId);
+                    return;
+                } else {
+                    // Sell all - confirmation required
+                    openConfirmationGUI(player, "sell_all", currencyId, 0);
+                    return;
+                }
+            }
+        }
+        
+        // Check if in the sell amount selection GUI
+        if (title.contains("Jual ") && title.contains("(") && title.contains(")")) {
+            String currencyId = selectedCrypto.get(player.getUniqueId());
+            if (currencyId != null) {
+                try {
+                    // Extract amount from title
+                    String amountStr = title.substring(title.indexOf("Jual ") + 5);
+                    if (amountStr.contains("(")) {
+                        amountStr = amountStr.substring(0, amountStr.indexOf("(")).trim();
+                    }
+                    double amount = Double.parseDouble(amountStr);
+                    
+                    // Open confirmation GUI
+                    openConfirmationGUI(player, "sell", currencyId, amount);
+                    return;
+                } catch (Exception e) {
+                    player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cGagal mendapatkan jumlah crypto dari button."));
+                }
+            }
+        }
+        
+        // Handle custom amount button
+        if (title.contains("Jumlah Kustom")) {
+            String currencyId = selectedCrypto.get(player.getUniqueId());
+            if (currencyId != null) {
+                player.closeInventory();
+                plugin.getPlayerDataManager().setTempData(player.getUniqueId(), "crypto_sell_pending", currencyId);
+                
+                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aKetik jumlah yang ingin Anda jual di chat:"));
+                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&7(Ketik 'batal' untuk membatalkan)"));
+            }
+        }
+    }
+    
+    /**
+     * Handle confirmation GUI clicks
+     */
+    private void handleConfirmationClick(Player player, ItemStack clickedItem) {
+        if (clickedItem == null || !clickedItem.hasItemMeta()) {
+            return;
+        }
+        
+        String title = clickedItem.getItemMeta().hasDisplayName() ? clickedItem.getItemMeta().getDisplayName() : "";
+        UUID playerId = player.getUniqueId();
+        String guiType = openGUITypes.get(playerId);
+        String currencyId = selectedCrypto.get(playerId);
+        
+        if (currencyId == null) {
+            player.closeInventory();
+            return;
+        }
+        
+        // Handle confirmation button
+        if (clickedItem.getType() == Material.LIME_WOOL && title.contains("Konfirmasi")) {
+            // Process transaction based on type
+            if (guiType.equals("CONFIRM_BUY")) {
+                int tokenAmount = transactionAmounts.getOrDefault(playerId, 0);
+                if (tokenAmount > 0) {
+                    boolean success = cryptoManager.buyCrypto(player, currencyId, tokenAmount);
+                    if (success) {
+                        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+                    }
+                }
+            } else if (guiType.equals("CONFIRM_SELL")) {
+                double amount = transactionAmounts.getOrDefault(playerId, 0);
+                boolean success = cryptoManager.sellCrypto(player, currencyId, amount);
+                if (success) {
+                    player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+                }
+            } else if (guiType.equals("CONFIRM_SELL_ALL")) {
+                boolean success = cryptoManager.sellCrypto(player, currencyId, 0); // 0 means sell all
+                if (success) {
+                    player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+                }
+            }
+            
+            player.closeInventory();
+        } 
+        // Handle cancel button
+        else if (clickedItem.getType() == Material.RED_WOOL && title.contains("Batalkan")) {
+            if (guiType.equals("CONFIRM_BUY")) {
+                openBuyAmountGUI(player, currencyId);
+            } else if (guiType.equals("CONFIRM_SELL") || guiType.equals("CONFIRM_SELL_ALL")) {
+                openSellCryptoMenu(player);
+            } else {
+                player.closeInventory();
+            }
+        }
+    }
+    
+    /**
+     * Handle clicks in the main menu
+     */
+    private void handleMainMenuClick(Player player, int slot, ItemStack clickedItem) {
+        if (clickedItem == null || !clickedItem.hasItemMeta()) {
+            return;
+        }
+        
+        String title = clickedItem.getItemMeta().getDisplayName();
+        
+        switch (slot) {
+            case 10: // Market button
+                openMarket(player);
+                break;
+            case 12: // Portfolio button
+                openPortfolio(player);
+                break;
+            case 14: // Buy crypto button
+                openBuyCryptoMenu(player);
+                break;
+            case 16: // Sell crypto button
+                openSellCryptoMenu(player);
+                break;
+            case 31: // Info button
+                // TODO: Open general info about crypto
+                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aFitur informasi masih dalam pengembangan."));
+                break;
+            case 32: // Close button
+                player.closeInventory();
+                break;
+        }
+    }
+    
+    /**
+     * Handle clicks in the market view
+     */
+    private void handleMarketClick(Player player, ItemStack clickedItem, boolean isShiftClick) {
+        if (clickedItem == null || !clickedItem.hasItemMeta() || !clickedItem.getItemMeta().getDisplayName()) {
+            return;
+        }
+        
+        String title = clickedItem.getItemMeta().getDisplayName();
+        
+        // Back button
+        if (title.contains("Kembali")) {
+            openMainMenu(player);
+            return;
+        }
+        
+        // Find which crypto was clicked
+        for (CryptoCurrency crypto : cryptoManager.getAllCryptocurrencies()) {
+            if (title.contains(crypto.getSymbol())) {
+                if (isShiftClick) {
+                    // Open chart view
+                    chartGUI.openChartGUI(player, crypto.getId(), "day");
+                } else {
+                    // Open detailed info
+                    openCryptoInfo(player, crypto.getId());
+                }
+                return;
+            }
+        }
+    }
+    
+    /**
+     * Handle clicks in the portfolio view
+     */
+    private void handlePortfolioClick(Player player, ItemStack clickedItem, boolean isRightClick, boolean isShiftClick) {
+        if (clickedItem == null || !clickedItem.hasItemMeta() || !clickedItem.getItemMeta().getDisplayName()) {
+            return;
+        }
+        
+        String title = clickedItem.getItemMeta().getDisplayName();
+        
+        // Back button
+        if (title.contains("Kembali")) {
+            openMainMenu(player);
+            return;
+        }
+        
+        // Find which crypto was clicked
+        Map<String, Double> investments = cryptoManager.getPlayerInvestments(player);
+        for (Map.Entry<String, Double> entry : investments.entrySet()) {
+            String currencyId = entry.getKey();
+            CryptoCurrency crypto = cryptoManager.getCryptocurrency(currencyId);
+            
+            if (crypto != null && title.contains(crypto.getSymbol())) {
+                if (isShiftClick) {
+                    // Open chart view
+                    chartGUI.openChartGUI(player, crypto.getId(), "day");
+                } else if (isRightClick) {
+                    // Open detailed info
+                    openCryptoInfo(player, crypto.getId());
+                } else {
+                    // Left-click - Sell
+                    openSellAmountGUI(player, crypto.getId());
+                }
+                return;
+            }
+        }
+    }
+    
+    /**
+     * Handle clicks in the cryptocurrency info view
+     */
+    private void handleInfoMenuClick(Player player, int slot, ItemStack clickedItem) {
+        if (clickedItem == null || !clickedItem.hasItemMeta() || !clickedItem.getItemMeta().getDisplayName()) {
+            return;
+        }
+        
+        String currencyId = selectedCrypto.get(player.getUniqueId());
+        if (currencyId == null) {
+            return;
+        }
+        
+        CryptoCurrency crypto = cryptoManager.getCryptocurrency(currencyId);
+        if (crypto == null) {
+            return;
+        }
+        
+        switch (slot) {
+            case 20: // Buy button
+                openBuyAmountGUI(player, currencyId);
+                break;
+            case 22: // Chart button
+                chartGUI.openChartGUI(player, currencyId, "day");
+                break;
+            case 24: // Sell button
+                openSellAmountGUI(player, currencyId);
+                break;
+            case 31: // Back button
+                openMarket(player);
                 break;
         }
     }
