@@ -50,7 +50,7 @@ public class CryptoCommand implements CommandExecutor, TabCompleter {
         
         // Main command - show portfolio
         if (args.length == 0) {
-            showPortfolio(player);
+            plugin.getCryptoGUI().openMainMenu(player);
             return true;
         }
         

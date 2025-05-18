@@ -157,6 +157,7 @@ public class CryptoGUI implements Listener {
         
         // Open the inventory and track the player
         player.openInventory(inventory);
+        player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 0.5f, 1.0f);
         openGUITypes.put(player.getUniqueId(), MAIN_MENU);
     }
     
@@ -1236,5 +1237,41 @@ public class CryptoGUI implements Listener {
             item.setItemMeta(meta);
         }
         return item;
+    }
+    
+    /**
+     * Refresh GUI setelah transaksi selesai
+     */
+    public void refreshGUI(Player player) {
+        UUID playerId = player.getUniqueId();
+        String guiType = openGUITypes.get(playerId);
+        
+        if (guiType == null) return;
+        
+        switch (guiType) {
+            case MARKET:
+                openMarket(player);
+                break;
+            case PORTFOLIO:
+                openPortfolio(player);
+                break;
+            case BUY:
+                openBuyCryptoMenu(player);
+                break;
+            case SELL:
+                openSellCryptoMenu(player);
+                break;
+            case INFO:
+                String currencyId = selectedCrypto.get(playerId);
+                if (currencyId != null) {
+                    openCryptoInfo(player, currencyId);
+                } else {
+                    openMainMenu(player);
+                }
+                break;
+            default:
+                openMainMenu(player);
+                break;
+        }
     }
 }

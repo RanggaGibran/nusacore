@@ -105,17 +105,30 @@ public class ChatListener implements Listener {
             try {
                 // For buying, we expect token amount
                 if (pendingBuy != null) {
-                    int amount = Integer.parseInt(message);
-                    if (amount <= 0) {
-                        player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cJumlah harus lebih besar dari 0."));
-                    } else {
-                        // Process buy with amount and crypto ID
-                        plugin.getCryptoManager().buyCrypto(player, pendingBuy, amount);
+                    int amount;
+                    try {
+                        amount = Integer.parseInt(message);
+                        // Tambahkan validasi maximum
+                        if (amount > 1000000) {
+                            player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cJumlah maksimum adalah 1.000.000 token."));
+                            return;
+                        }
+                        if (amount <= 0) {
+                            player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cJumlah harus lebih besar dari 0."));
+                        } else {
+                            // Process buy with amount and crypto ID
+                            plugin.getCryptoManager().buyCrypto(player, pendingBuy, amount);
+                        }
+                        
+                        // Clear pending data
+                        plugin.getPlayerDataManager().removeTempData(playerId, "crypto_buy_pending");
+                        event.setCancelled(true);
+                    } catch (NumberFormatException e) {
+                        player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cFormat angka tidak valid. Transaksi dibatalkan."));
+                        plugin.getPlayerDataManager().removeTempData(playerId, "crypto_buy_pending");
+                        plugin.getPlayerDataManager().removeTempData(playerId, "crypto_sell_pending");
+                        event.setCancelled(true);
                     }
-                    
-                    // Clear pending data
-                    plugin.getPlayerDataManager().removeTempData(playerId, "crypto_buy_pending");
-                    event.setCancelled(true);
                 }
                 // For selling, we expect crypto amount
                 else if (pendingSell != null) {

@@ -124,6 +124,15 @@ public class ChartGUI implements Listener {
      * Fill chart section of inventory based on price history
      */
     private void fillChart(Inventory inventory, List<Double> history, String period) {
+        // Tambahkan validasi untuk mencegah crash
+        if (history.isEmpty()) {
+            // Tampilkan pesan "No Data" di tengah chart
+            ItemStack noDataItem = createItem(Material.BARRIER, "§c§lNo Data", 
+                Collections.singletonList("§7Tidak ada data historis yang tersedia"));
+            inventory.setItem(31, noDataItem);
+            return;
+        }
+        
         // Determine number of data points to show based on period
         int dataPoints;
         switch (period) {
