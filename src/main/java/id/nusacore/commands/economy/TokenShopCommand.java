@@ -1,0 +1,77 @@
+package id.nusacore.commands.economy;
+
+import id.nusacore.NusaCore;
+import id.nusacore.gui.TokenShopGUI;
+import id.nusacore.utils.ColorUtils;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class TokenShopCommand implements CommandExecutor, TabCompleter {
+
+    private final NusaCore plugin;
+    private final TokenShopGUI tokenShopGUI;
+    
+    public TokenShopCommand(NusaCore plugin) {
+        this.plugin = plugin;
+        this.tokenShopGUI = new TokenShopGUI(plugin);
+    }
+
+    @Override
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cHanya pemain yang dapat menggunakan perintah ini."));
+            return true;
+        }
+        
+        if (!player.hasPermission("nusatown.command.tokenshop")) {
+            player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cAnda tidak memiliki izin untuk menggunakan perintah ini."));
+            return true;
+        }
+        
+        // Check for subcommands
+        if (args.length > 0) {
+            String subCommand = args[0].toLowerCase();
+            
+            // Admin command to reload shop config
+            if (subCommand.equals("reload") && player.hasPermission("nusatown.command.tokenshop.admin")) {
+                tokenShopGUI.reloadConfig();
+                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aKonfigurasi token shop berhasil dimuat ulang!"));
+                return true;
+            }
+            
+            // Open specific category if it exists
+            if (tokenShopGUI.categoryExists(subCommand)) {
+                tokenShopGUI.openCategory(player, subCommand);
+                return true;
+            }
+        }
+        
+        // Open main shop menu
+        tokenShopGUI.openMainMenu(player);
+        return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length == 1) {
+            List<String> completions = new ArrayList<>(tokenShopGUI.getCategoryIds());
+            
+            // Add admin commands if player has permission
+            if (sender.hasPermission("nusatown.command.tokenshop.admin")) {
+                completions.add("reload");
+            }
+            
+            return completions.stream()
+                    .filter(c -> c.toLowerCase().startsWith(args[0].toLowerCase()))
+                    .collect(Collectors.toList());
+        }
+        return new ArrayList<>();
+    }
+}

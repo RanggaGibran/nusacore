@@ -30,6 +30,7 @@ import id.nusacore.commands.voting.VotePartyAdminCommand;
 import id.nusacore.commands.voting.VoteRewardCommand;
 import id.nusacore.commands.ChatGamesCommand;
 import id.nusacore.commands.CryptoCommand;
+import id.nusacore.commands.economy.TokenShopCommand;
 import id.nusacore.listeners.ChatListener;
 import id.nusacore.listeners.CombatListener;
 import id.nusacore.listeners.PlayerEventListener;
@@ -115,6 +116,7 @@ public class NusaCore extends JavaPlugin {
   private ChatListener chatListener;
   private RankGUIListener rankGUIListener;
   private PlayerDataManager playerDataManager;
+  private TokenShopCommand tokenShopCommand;
   
   public static String PREFIX;
   
@@ -181,6 +183,11 @@ public class NusaCore extends JavaPlugin {
     // Initialize token manager
     tokenManager = new TokenManager(this);
     getCommand("tokens").setExecutor(new TokenCommand(this));
+    
+    // Register token shop command
+    tokenShopCommand = new TokenShopCommand(this);
+    getCommand("tokenshop").setExecutor(tokenShopCommand);
+    getCommand("tokenshop").setTabCompleter(tokenShopCommand);
     
     // Initialize message manager
     messageManager = new MessageManager(this);

@@ -1,0 +1,184 @@
+# Konfigurasi Token Shop NusaTown
+
+settings:
+  title: "&6&lToken Shop"
+  main-menu-size: 36  # Ukuran inventory menu utama (harus kelipatan 9)
+  filler-item: "BLACK_STAINED_GLASS_PANE"  # Material untuk item pengisi
+
+categories:
+  tools:
+    name: "&b&lPeralatan"
+    size: 36  # Ukuran inventory kategori
+    icon:
+      material: "DIAMOND_PICKAXE"
+      name: "&b&lPeralatan"
+      glow: true
+      lore:
+        - "&7Berbagai alat berkualitas tinggi"
+        - "&7untuk membantu aktivitas Anda"
+        - ""
+        - "&eKlik untuk melihat"
+    items:
+      diamond_pickaxe:
+        material: "DIAMOND_PICKAXE"
+        name: "&b&lDiamond Pickaxe &7(Efficiency V)"
+        amount: 1
+        price: 250
+        lore:
+          - "&7Pickaxe dengan enchant Efficiency V"
+          - "&7untuk menambang dengan cepat"
+        commands:
+          - "give {player} diamond_pickaxe{Enchantments:[{id:efficiency,lvl:5}]} 1"
+      fortune_pickaxe:
+        material: "NETHERITE_PICKAXE"
+        name: "&5&lFortune Pickaxe"
+        amount: 1
+        price: 500
+        lore:
+          - "&7Pickaxe dengan enchant Fortune III"
+          - "&7untuk hasil tambang lebih banyak"
+        commands:
+          - "give {player} netherite_pickaxe{Enchantments:[{id:fortune,lvl:3},{id:efficiency,lvl:4},{id:unbreaking,lvl:3}]} 1"
+      silk_touch_pickaxe:
+        material: "NETHERITE_PICKAXE"
+        name: "&d&lSilk Touch Pickaxe"
+        amount: 1
+        price: 500
+        lore:
+          - "&7Pickaxe dengan enchant Silk Touch"
+          - "&7untuk memanen blok secara utuh"
+        commands:
+          - "give {player} netherite_pickaxe{Enchantments:[{id:silk_touch,lvl:1},{id:efficiency,lvl:4},{id:unbreaking,lvl:3}]} 1"
+
+  armor:
+    name: "&c&lArmor"
+    size: 36
+    icon:
+      material: "DIAMOND_CHESTPLATE"
+      name: "&c&lArmor"
+      glow: true
+      lore:
+        - "&7Perlindungan terbaik untuk"
+        - "&7petualangan Anda"
+        - ""
+        - "&eKlik untuk melihat"
+    items:
+      diamond_set:
+        material: "DIAMOND_CHESTPLATE"
+        name: "&b&lDiamond Armor Set"
+        amount: 1
+        price: 500
+        lore:
+          - "&7Set armor Diamond lengkap"
+          - "&7dengan enchant Protection II"
+        commands:
+          - "give {player} diamond_helmet{Enchantments:[{id:protection,lvl:2}]} 1"
+          - "give {player} diamond_chestplate{Enchantments:[{id:protection,lvl:2}]} 1"
+          - "give {player} diamond_leggings{Enchantments:[{id:protection,lvl:2}]} 1"
+          - "give {player} diamond_boots{Enchantments:[{id:protection,lvl:2}]} 1"
+      netherite_set:
+        material: "NETHERITE_CHESTPLATE"
+        name: "&5&lNetherite Armor Set"
+        amount: 1
+        price: 1000
+        lore:
+          - "&7Set armor Netherite lengkap"
+          - "&7dengan enchant Protection III"
+        commands:
+          - "give {player} netherite_helmet{Enchantments:[{id:protection,lvl:3},{id:unbreaking,lvl:2}]} 1"
+          - "give {player} netherite_chestplate{Enchantments:[{id:protection,lvl:3},{id:unbreaking,lvl:2}]} 1"
+          - "give {player} netherite_leggings{Enchantments:[{id:protection,lvl:3},{id:unbreaking,lvl:2}]} 1"
+          - "give {player} netherite_boots{Enchantments:[{id:protection,lvl:3},{id:unbreaking,lvl:2}]} 1"
+
+  weapons:
+    name: "&4&lSenjata"
+    size: 36
+    icon:
+      material: "DIAMOND_SWORD"
+      name: "&4&lSenjata"
+      glow: true
+      lore:
+        - "&7Senjata canggih untuk"
+        - "&7menghadapi segala ancaman"
+        - ""
+        - "&eKlik untuk melihat"
+    items:
+      sharpness_sword:
+        material: "DIAMOND_SWORD"
+        name: "&c&lSharpness Sword"
+        amount: 1
+        price: 300
+        lore:
+          - "&7Pedang dengan enchant Sharpness V"
+          - "&7untuk damage yang lebih besar"
+        commands:
+          - "give {player} diamond_sword{Enchantments:[{id:sharpness,lvl:5}]} 1"
+      fire_sword:
+        material: "GOLDEN_SWORD"
+        name: "&6&lFire Aspect Sword"
+        amount: 1
+        price: 300
+        glow: true
+        lore:
+          - "&7Pedang dengan enchant Fire Aspect II"
+          - "&7untuk membakar musuh"
+        commands:
+          - "give {player} diamond_sword{Enchantments:[{id:fire_aspect,lvl:2},{id:sharpness,lvl:3}]} 1"
+      bow:
+        material: "BOW"
+        name: "&a&lPower Bow"
+        amount: 1
+        price: 300
+        lore:
+          - "&7Busur dengan enchant Power V"
+          - "&7untuk serangan jarak jauh"
+        commands:
+          - "give {player} bow{Enchantments:[{id:power,lvl:5}]} 1"
+          - "give {player} arrow 64"
+
+  specials:
+    name: "&d&lItem Spesial"
+    size: 36
+    icon:
+      material: "NETHER_STAR"
+      name: "&d&lItem Spesial"
+      glow: true
+      lore:
+        - "&7Item-item unik dengan"
+        - "&7kemampuan special"
+        - ""
+        - "&eKlik untuk melihat"
+    items:
+      fly_potion:
+        material: "POTION"
+        name: "&b&lPotion of Flight"
+        amount: 1
+        price: 400
+        glow: true
+        lore:
+          - "&7Memberikan kemampuan terbang"
+          - "&7selama 30 menit"
+        commands:
+          - "tempfly give {player} 30m"
+      money_boost:
+        material: "EXPERIENCE_BOTTLE"
+        name: "&a&lMoney Booster"
+        amount: 1
+        price: 500
+        glow: true
+        lore:
+          - "&72x money multiplier"
+          - "&7selama 1 jam"
+        commands:
+          - "mboost give {player} 2 60m"
+      random_crate_key:
+        material: "TRIPWIRE_HOOK"
+        name: "&e&lRandom Crate Key"
+        amount: 1
+        price: 200
+        glow: true
+        lore:
+          - "&7Kunci acak untuk membuka crate"
+          - "&7di spawn"
+        commands:
+          - "crate key give {player} random 1"

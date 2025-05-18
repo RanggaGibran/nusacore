@@ -140,6 +140,10 @@ commands:
     description: Kelola investasi crypto
     usage: /<command> [market|info|buy|sell|portfolio]
     aliases: [cripto, koin]
+  tokenshop:
+    description: Buka toko untuk membeli item dengan token
+    usage: /<command> [category|reload]
+    aliases: [tshop, tokenstore]
 
 permissions:
   nusatown.admin.reload:
@@ -267,4 +271,10 @@ permissions:
     default: true
   nusatown.command.crypto.admin:
     description: Izin untuk mengelola sistem crypto (admin)
+    default: op
+  nusatown.command.tokenshop:
+    description: Izin untuk menggunakan token shop
+    default: true
+  nusatown.command.tokenshop.admin:
+    description: Izin untuk mengelola token shop
     default: op
