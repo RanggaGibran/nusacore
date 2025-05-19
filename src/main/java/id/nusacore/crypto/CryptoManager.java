@@ -224,38 +224,43 @@ public class CryptoManager {
      * Save market data to file
      */
     public void saveMarketData() {
-        if (cryptoConfig == null) {
-            plugin.getLogger().warning("Cannot save crypto data: config is null");
-            return;
-        }
-        
         try {
-            // Save current prices
-            for (CryptoCurrency crypto : cryptoCurrencies.values()) {
-                cryptoConfig.set("currencies." + crypto.getId() + ".current-price", crypto.getCurrentPrice());
+            // Save cryptocurrency prices
+            ConfigurationSection currenciesSection = cryptoConfig.createSection("currencies");
+            for (Map.Entry<String, CryptoCurrency> entry : cryptoCurrencies.entrySet()) {
+                ConfigurationSection currencySection = currenciesSection.createSection(entry.getKey());
+                CryptoCurrency crypto = entry.getValue();
+                currencySection.set("name", crypto.getName());
+                currencySection.set("symbol", crypto.getSymbol());
+                currencySection.set("current-price", crypto.getCurrentPrice());
+                currencySection.set("volatility", crypto.getVolatility());
+                currencySection.set("min-price", crypto.getMinPrice());
+                currencySection.set("max-price", crypto.getMaxPrice());
+                currencySection.set("risk", crypto.getRisk().name());
             }
             
-            // Save player investments - CLEAR SECTION FIRST to avoid leftovers
-            cryptoConfig.set("investments", null);
+            // Save player investments
             ConfigurationSection investmentsSection = cryptoConfig.createSection("investments");
-            
-            // Log how many players we're saving
-            plugin.getLogger().info("Saving investments for " + playerInvestments.size() + " players");
-            
             for (Map.Entry<UUID, Map<String, Double>> entry : playerInvestments.entrySet()) {
-                String playerUuid = entry.getKey().toString();
-                Map<String, Double> investments = entry.getValue();
-                
-                for (Map.Entry<String, Double> investmentEntry : investments.entrySet()) {
-                    investmentsSection.set(playerUuid + "." + investmentEntry.getKey(), investmentEntry.getValue());
+                ConfigurationSection playerSection = investmentsSection.createSection(entry.getKey().toString());
+                for (Map.Entry<String, Double> investment : entry.getValue().entrySet()) {
+                    if (investment.getValue() > 0) {
+                        playerSection.set(investment.getKey(), investment.getValue());
+                    }
                 }
             }
             
-            // Save to disk
+            // Save price history
+            ConfigurationSection historySection = cryptoConfig.createSection("price-history");
+            for (Map.Entry<String, List<Double>> entry : priceHistory.entrySet()) {
+                historySection.set(entry.getKey(), entry.getValue());
+            }
+            
+            // Save config to file
             cryptoConfig.save(cryptoFile);
-            plugin.getLogger().info("Successfully saved crypto market data");
-        } catch (IOException e) {
-            plugin.getLogger().log(Level.SEVERE, "Could not save crypto.yml", e);
+        } catch (Exception e) {
+            plugin.getLogger().severe("Failed to save crypto market data: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
@@ -532,5 +537,6 @@ public class CryptoManager {
     public void onDisable() {
         Bukkit.getScheduler().cancelTask(marketUpdateTask);
         saveMarketData();
+        plugin.getLogger().info("Crypto market data saved successfully on shutdown.");
     }
 }

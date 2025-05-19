@@ -380,6 +380,7 @@ public class TokenShopGUI implements Listener {
                     icon.getItemMeta() != null &&
                     clickedItem.getItemMeta().getDisplayName().equals(icon.getItemMeta().getDisplayName())) {
                     openCategory(player, category.getId());
+                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
                     return;
                 }
             }
@@ -405,28 +406,33 @@ public class TokenShopGUI implements Listener {
                     for (ShopItem item : category.getItems()) {
                         ItemStack displayItem = item.getDisplayItem();
                         
-                        // Compare the clicked item with shop items
+                        // Fix: Improved item comparison with display name and lore
                         if (clickedItem.getType() == displayItem.getType() && 
                             clickedItem.getItemMeta() != null && 
                             displayItem.getItemMeta() != null &&
                             clickedItem.getItemMeta().getDisplayName().equals(displayItem.getItemMeta().getDisplayName())) {
                             
-                            // Process purchase
-                            int price = item.getPrice();
-                            
                             // Check if player has enough tokens
-                            if (!plugin.getTokenManager().hasTokens(player, price)) {
+                            int price = item.getPrice();
+                            int tokens = plugin.getTokenManager().getTokens(player);
+                            
+                            if (tokens < price) {
                                 player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + 
                                         "&cAnda tidak memiliki cukup token! Dibutuhkan &e" + price + " tokens&c."));
                                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                                 return;
                             }
                             
-                            // Process purchase
+                            // Process purchase - remove tokens first
                             if (plugin.getTokenManager().removeTokens(player, price)) {
+                                // Debug log
+                                plugin.getLogger().info("Player " + player.getName() + " is purchasing " + 
+                                        displayItem.getItemMeta().getDisplayName() + " for " + price + " tokens");
+                                
                                 // Execute commands
                                 for (String cmd : item.getCommands()) {
                                     String processedCmd = cmd.replace("{player}", player.getName());
+                                    plugin.getLogger().info("Executing command: " + processedCmd);
                                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), processedCmd);
                                 }
                                 
