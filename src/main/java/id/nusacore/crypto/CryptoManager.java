@@ -65,40 +65,54 @@ public class CryptoManager {
      * Initialize crypto market with default values
      */
     private void initializeMarket() {
+        // Load the configuration first to ensure we have any existing data
+        cryptoCurrencies.clear();
+        
+        // Load cryptocurrencies
         ConfigurationSection currenciesSection = cryptoConfig.getConfigurationSection("currencies");
         
-        if (currenciesSection == null) {
-            plugin.getLogger().warning("No crypto currencies defined in config!");
-            return;
+        if (currenciesSection != null) {
+            for (String currencyId : currenciesSection.getKeys(false)) {
+                ConfigurationSection currencySection = currenciesSection.getConfigurationSection(currencyId);
+                
+                if (currencySection != null) {
+                    String name = currencySection.getString("name", currencyId);
+                    String symbol = currencySection.getString("symbol", currencyId.toUpperCase());
+                    double initialPrice = currencySection.getDouble("initial-price", 100.0);
+                    double volatility = currencySection.getDouble("volatility", 0.05); // 5% default volatility
+                    double minPrice = currencySection.getDouble("min-price", 10.0);
+                    double maxPrice = currencySection.getDouble("max-price", 10000.0);
+                    String riskLevel = currencySection.getString("risk", "medium");
+                    
+                    CryptoCurrency crypto = new CryptoCurrency(
+                        currencyId,
+                        name,
+                        symbol,
+                        initialPrice,
+                        volatility,
+                        minPrice,
+                        maxPrice,
+                        CryptoRisk.fromString(riskLevel)
+                    );
+                    
+                    cryptoCurrencies.put(currencyId, crypto);
+                    priceHistory.put(currencyId, new ArrayList<>(Collections.singletonList(initialPrice)));
+                    
+                    plugin.getLogger().info("Loaded cryptocurrency: " + name + " (" + symbol + ") - Initial price: " + initialPrice);
+                }
+            }
         }
         
-        for (String currencyId : currenciesSection.getKeys(false)) {
-            ConfigurationSection currencySection = currenciesSection.getConfigurationSection(currencyId);
-            
-            if (currencySection != null) {
-                String name = currencySection.getString("name", currencyId);
-                String symbol = currencySection.getString("symbol", currencyId.toUpperCase());
-                double initialPrice = currencySection.getDouble("initial-price", 100.0);
-                double volatility = currencySection.getDouble("volatility", 0.05); // 5% default volatility
-                double minPrice = currencySection.getDouble("min-price", 10.0);
-                double maxPrice = currencySection.getDouble("max-price", 10000.0);
-                String riskLevel = currencySection.getString("risk", "medium");
-                
-                CryptoCurrency crypto = new CryptoCurrency(
-                    currencyId,
-                    name,
-                    symbol,
-                    initialPrice,
-                    volatility,
-                    minPrice,
-                    maxPrice,
-                    CryptoRisk.fromString(riskLevel)
-                );
-                
-                cryptoCurrencies.put(currencyId, crypto);
-                priceHistory.put(currencyId, new ArrayList<>(Collections.singletonList(initialPrice)));
-                
-                plugin.getLogger().info("Loaded cryptocurrency: " + name + " (" + symbol + ") - Initial price: " + initialPrice);
+        // Now load investments - but don't clear the map first if it already has data
+        // We'll handle clearing in the loadPlayerInvestments method instead
+        loadPlayerInvestments();
+        
+        // Load price history data if available
+        ConfigurationSection historySection = cryptoConfig.getConfigurationSection("price-history");
+        if (historySection != null) {
+            for (String currencyId : historySection.getKeys(false)) {
+                List<Double> history = historySection.getDoubleList(currencyId);
+                priceHistory.put(currencyId, history);
             }
         }
     }
@@ -116,17 +130,12 @@ public class CryptoManager {
     }
     
     /**
-     * Add a method to periodically save data (call this in the constructor)
+     * Add a method to periodically save data
      */
     private void scheduleAutoSave() {
-        // Save data every 5 minutes to prevent complete loss on crash
-        int autoSaveTask = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, 
-            this::saveMarketData, 
-            20 * 60 * 5, // First run after 5 minutes 
-            20 * 60 * 5  // Then every 5 minutes
-        );
-        
-        plugin.getLogger().info("Scheduled automatic crypto data saving every 5 minutes");
+        // Save data every 5 minutes (6000 ticks)
+        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::saveMarketData, 6000L, 6000L);
+        plugin.getLogger().info("Scheduled automatic crypto market data saving every 5 minutes");
     }
     
     /**
@@ -225,6 +234,10 @@ public class CryptoManager {
      */
     public void saveMarketData() {
         try {
+            // Log the current state for debugging
+            plugin.getLogger().info("Saving crypto market data... Current investments: " + 
+                playerInvestments.size() + " player(s)");
+                
             // Save cryptocurrency prices
             ConfigurationSection currenciesSection = cryptoConfig.createSection("currencies");
             for (Map.Entry<String, CryptoCurrency> entry : cryptoCurrencies.entrySet()) {
@@ -258,6 +271,8 @@ public class CryptoManager {
             
             // Save config to file
             cryptoConfig.save(cryptoFile);
+            
+            plugin.getLogger().info("Crypto market data saved successfully to " + cryptoFile.getName());
         } catch (Exception e) {
             plugin.getLogger().severe("Failed to save crypto market data: " + e.getMessage());
             e.printStackTrace();
@@ -268,13 +283,17 @@ public class CryptoManager {
      * Load player investments from config
      */
     private void loadPlayerInvestments() {
-        playerInvestments.clear();
-        
         ConfigurationSection investmentsSection = cryptoConfig.getConfigurationSection("investments");
         if (investmentsSection == null) {
             plugin.getLogger().warning("No investments section found in crypto.yml");
             return;
         }
+        
+        // Log the size of the investments section from the file
+        plugin.getLogger().info("Loading investments from crypto.yml... Found " + 
+            investmentsSection.getKeys(false).size() + " player(s) with investments");
+        
+        playerInvestments.clear();
         
         int playerCount = 0;
         int investmentCount = 0;
@@ -380,7 +399,7 @@ public class CryptoManager {
             String.format("%.6f", cryptoAmount) + " " + crypto.getSymbol() + 
             " &adengan &f" + tokenAmount + " Token&a!"));
         
-        // After the transaction completes successfully, save the data
+        // Save the market data immediately after purchase
         saveMarketData();
         
         return true;
@@ -449,7 +468,7 @@ public class CryptoManager {
             String.format("%.6f", cryptoAmount) + " " + crypto.getSymbol() + 
             " &adan mendapatkan &f" + tokenReturn + " Token&a!"));
         
-        // After the transaction completes successfully, save the data
+        // Save the market data immediately after sale
         saveMarketData();
         
         return true;
@@ -535,8 +554,8 @@ public class CryptoManager {
      * Cleanup on disable
      */
     public void onDisable() {
-        Bukkit.getScheduler().cancelTask(marketUpdateTask);
+        plugin.getLogger().info("Saving crypto market data before shutdown...");
         saveMarketData();
-        plugin.getLogger().info("Crypto market data saved successfully on shutdown.");
+        plugin.getLogger().info("Crypto market data saved!");
     }
 }

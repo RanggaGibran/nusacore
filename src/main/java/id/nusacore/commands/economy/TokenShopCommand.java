@@ -10,6 +10,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,41 +36,23 @@ public class TokenShopCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         
-        // Check for subcommands
-        if (args.length > 0) {
-            String subCommand = args[0].toLowerCase();
-            
-            // Admin command to reload shop config
-            if (subCommand.equals("reload") && player.hasPermission("nusatown.command.tokenshop.admin")) {
-                tokenShopGUI.reloadConfig();
-                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aKonfigurasi token shop berhasil dimuat ulang!"));
-                return true;
-            }
-            
-            // Open specific category if it exists
-            if (tokenShopGUI.categoryExists(subCommand)) {
-                tokenShopGUI.openCategory(player, subCommand);
-                return true;
-            }
+        // Check for admin reload command
+        if (args.length > 0 && args[0].equalsIgnoreCase("reload") && player.hasPermission("nusatown.command.tokenshop.admin")) {
+            tokenShopGUI.reloadConfig();
+            player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&aKonfigurasi token shop berhasil dimuat ulang!"));
+            return true;
         }
         
-        // Open main shop menu
-        tokenShopGUI.openMainMenu(player);
+        // Open the shop
+        tokenShopGUI.openShop(player);
         return true;
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (args.length == 1) {
-            List<String> completions = new ArrayList<>(tokenShopGUI.getCategoryIds());
-            
-            // Add admin commands if player has permission
-            if (sender.hasPermission("nusatown.command.tokenshop.admin")) {
-                completions.add("reload");
-            }
-            
-            return completions.stream()
-                    .filter(c -> c.toLowerCase().startsWith(args[0].toLowerCase()))
+        if (args.length == 1 && sender.hasPermission("nusatown.command.tokenshop.admin")) {
+            return Arrays.asList("reload").stream()
+                    .filter(s -> s.toLowerCase().startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
         return new ArrayList<>();

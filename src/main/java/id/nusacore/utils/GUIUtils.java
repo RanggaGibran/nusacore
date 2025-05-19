@@ -112,6 +112,22 @@ public class GUIUtils {
     }
     
     /**
+     * Mengisi inventory dengan item border menggunakan ItemStack
+     * 
+     * @param inventory Inventory yang akan diisi border
+     * @param borderItem ItemStack untuk border
+     */
+    public static void fillBorder(Inventory inventory, ItemStack borderItem) {
+        int size = inventory.getSize();
+        for (int i = 0; i < size; i++) {
+            // Jika slot di tepi inventory
+            if (i < 9 || i % 9 == 0 || i % 9 == 8 || i >= size - 9) {
+                inventory.setItem(i, borderItem.clone());
+            }
+        }
+    }
+    
+    /**
      * Mengisi seluruh inventory dengan item tertentu
      * 
      * @param inventory Inventory yang akan diisi

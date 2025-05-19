@@ -131,6 +131,7 @@ public class TokenManager {
         }
         
         tokenCache.put(player.getUniqueId(), amount);
+        saveTokenData(); // Add this line to save changes immediately
         return true;
     }
     
