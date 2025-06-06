@@ -19,13 +19,8 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
-import com.palmergames.bukkit.towny.TownyAPI;
-import com.palmergames.bukkit.towny.exceptions.NotRegisteredException;
-import com.palmergames.bukkit.towny.object.TownBlock;
-import com.palmergames.bukkit.towny.object.WorldCoord;
 
 import java.io.File;
 import java.io.IOException;
@@ -758,8 +753,7 @@ public class RTPCommand implements CommandExecutor, TabCompleter {
             }, 1L); // Delay minimal untuk mengurangi tekanan pada server
         });
     }
-    
-    /**
+      /**
      * Periksa apakah lokasi potensial aman (lebih longgar untuk mengurangi false negatives)
      */
     private boolean isLocationPotentiallySafe(Location location) {
@@ -769,10 +763,7 @@ public class RTPCommand implements CommandExecutor, TabCompleter {
         int z = location.getBlockZ();
         
         try {
-            // Pemeriksaan dasar untuk region protection
-            if (config.getBoolean("protection.respect-towny-claims", true) && isTownyProtected(location)) {
-                return false;
-            }
+            // Pemeriksaan dasar untuk region protection sudah dihapus (Towny removed)
             
             // Periksa apakah lokasi di atas ground yang solid
             Block blockBelow = world.getBlockAt(x, y - 1, z);
@@ -832,97 +823,8 @@ public class RTPCommand implements CommandExecutor, TabCompleter {
             return false; // Default: tidak protected
         } catch (Exception e) {
             return false; // Asumsikan tidak protected jika error
-        }
-    }
-    
-    /**
-     * Periksa apakah lokasi berada dalam klaim Towny
-     * @param location Lokasi yang diperiksa
-     * @return true jika terproteksi (dalam klaim)
-     */
-    private boolean isTownyProtected(Location location) {
-        // Cek apakah Towny ada
-        if (Bukkit.getPluginManager().getPlugin("Towny") == null) {
-            return false;
-        }
-        
-        try {
-            // Gunakan TownyAPI untuk mendapatkan TownBlock
-            TownyAPI townyAPI = TownyAPI.getInstance();
-            if (townyAPI != null) {
-                // Gunakan koordinat untuk mendapatkan TownBlock
-                WorldCoord worldCoord = WorldCoord.parseWorldCoord(location);
-                TownBlock townBlock = worldCoord.getTownBlock();
-                
-                // Jika ada TownBlock, lokasi ini dalam klaim
-                if (townBlock != null && townBlock.hasTown()) {
-                    // Opsi lanjutan: Konfigurasi untuk allow/deny klaim tertentu
-                    // Misalnya bisa mengizinkan RTP ke wilderness klaim tertentu
-                    if (config.getBoolean("protection.respect-towny-claims", true)) {
-                        // Konfigurasi opsi whitelist/blacklist
-                        List<String> allowedTowns = config.getStringList("protection.allowed-towns");
-                        if (!allowedTowns.isEmpty() && allowedTowns.contains(townBlock.getTown().getName())) {
-                            return false; // Izinkan RTP di town ini (whitelist)
-                        }
-                        
-                        return true; // Klaim ditemukan, anggap terproteksi
-                    }
-                }
-            }
-            return false; // Tidak dalam klaim
-        } catch (NotRegisteredException e) {
-            // Jika terjadi error (misalnya town tidak valid), biarkan RTP terjadi
-            return false;
-        } catch (Exception e) {
-            plugin.getLogger().warning("Error checking Towny protection: " + e.getMessage());
-            return config.getBoolean("protection.safe-mode", true); 
-            // Dalam safe mode, anggap terproteksi jika error
-        }
-    }
-    
-    /**
-     * Untuk Paper API
-     */
-    private CompletableFuture<Boolean> checkSafetyAsync(Location location) {
-        CompletableFuture<Boolean> future = new CompletableFuture<>();
-        
-        try {
-            // Async chunk loading via PaperLib
-            PaperLib.getChunkAtAsync(location).thenAccept(chunk -> {
-                // Check if it's a Paper server with async getBlockData access
-                if (PaperLib.isPaper()) {
-                    // Paper-only async block checks
-                    checkBlockSafetyAsync(location).thenAccept(isSafe -> {
-                        if (isSafe) {
-                            // Check Towny protection on main thread (API requirement)
-                            Bukkit.getScheduler().runTask(plugin, () -> {
-                                boolean isProtected = isTownyProtected(location);
-                                future.complete(!isProtected); // Safe if not protected
-                            });
-                        } else {
-                            future.complete(false);
-                        }
-                    });
-                } else {
-                    // Fallback to sync check on Spigot
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        future.complete(isLocationPotentiallySafe(location));
-                    });
-                }
-            }).exceptionally(ex -> {
-                plugin.getLogger().warning("Error in async safety check: " + ex.getMessage());
-                future.complete(false);
-                return null;
-            });
-        } catch (Exception e) {
-            plugin.getLogger().warning("Error in checkSafetyAsync: " + e.getMessage());
-            future.complete(false);
-        }
-        
-        return future;
-    }
-    
-    /**
+        }    }
+      /**
      * Ini hanya akan berfungsi di Paper, tidak di Spigot
      */
     private CompletableFuture<Boolean> checkBlockSafetyAsync(Location location) {

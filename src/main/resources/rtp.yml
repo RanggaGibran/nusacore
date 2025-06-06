@@ -77,11 +77,8 @@ scanning:
 
 # Konfigurasi integrasi proteksi wilayah
 protection:
-  # Towny protection settings
-  respect-towny-claims: false  # Dimatikan untuk tes
+  # Basic protection settings
   safe-mode: true  # Default proteksi jika terjadi error
-  allowed-towns: [] # Whitelist town yang boleh menjadi lokasi RTP
-  respect-wilderness: false # Jika true, akan mencari hanya di wilderness
   
   # WorldGuard integration if needed
   respect-worldguard: false

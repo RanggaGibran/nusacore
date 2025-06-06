@@ -61,7 +61,7 @@ import id.nusacore.crypto.gui.CryptoGUI;
 import id.nusacore.discord.ChatGamesDiscordIntegration;
 import id.nusacore.discord.CryptoDiscordIntegration;
 import id.nusacore.utils.ColorUtils;
-import id.nusacore.hooks.TownyHook;
+
 import id.nusacore.hooks.RankUpPlaceholder;
 import id.nusacore.placeholders.VotePlaceholders;
 import id.nusacore.placeholders.CryptoPlaceholders;
@@ -79,7 +79,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -341,23 +340,8 @@ public class NusaCore extends JavaPlugin {
     
     // Register interceptor
     getServer().getPluginManager().registerEvents(new CommandInterceptListener(this), this);
-    
-    // Register AFKRegion listener
+      // Register AFKRegion listener
     getServer().getPluginManager().registerEvents(new AFKRegionListener(this), this);
-    
-    // Register economy provider re-registration listener
-    getServer().getPluginManager().registerEvents(new Listener() {
-        @EventHandler
-        public void onPluginEnable(PluginEnableEvent event) {
-            if (event.getPlugin().getName().equals("Towny")) {
-                // Re-register economy provider when Towny loads
-                getServer().getScheduler().runTaskLater(NusaCore.this, () -> {
-                    setupEconomy();
-                    LOGGER.info("Re-registered economy provider after Towny loaded");
-                }, 20L);
-            }
-        }
-    }, this);
     
     // Register RankUp listeners
     Bukkit.getPluginManager().registerEvents(new Listener() {
@@ -375,18 +359,7 @@ public class NusaCore extends JavaPlugin {
     // Register RankGUIListener
     rankGUIListener = new RankGUIListener(this);
     getServer().getPluginManager().registerEvents(rankGUIListener, this);
-    
-    // Di onEnable() setelah inisialisasi ekonomi
-    if (getServer().getPluginManager().getPlugin("Towny") != null) {
-        new TownyHook(this).initialize();
-    }
-    
-    // Reset RTP counters pada startup
-    for (World world : getServer().getWorlds()) {
-        worldActiveRTPs.put(world.getName(), new AtomicInteger(0));
-    }
-    
-    // Initialize player data manager
+      // Initialize player data manager
     playerDataManager = new PlayerDataManager(this);
     
     // Register listeners

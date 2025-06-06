@@ -4,7 +4,6 @@ version: 1.0-BETA
 api-version: 1.20
 depend: [Vault]
 softdepend: [PlaceholderAPI, ProtocolLib]
-loadbefore: [Towny]  # Pastikan plugin kita load sebelum Towny
 authors: [YourName]
 description: NusaTown server core plugin
 
