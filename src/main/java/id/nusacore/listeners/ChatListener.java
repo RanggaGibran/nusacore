@@ -102,48 +102,84 @@ public class ChatListener implements Listener {
             }
             
             // Try to parse amount
-            try {
-                // For buying, we expect token amount
-                if (pendingBuy != null) {
-                    int amount;
-                    try {
-                        amount = Integer.parseInt(message);
-                        // Tambahkan validasi maximum
-                        if (amount > 1000000) {
-                            player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cJumlah maksimum adalah 1.000.000 token."));
-                            return;
+            try {                    // For buying, we expect token amount
+                    if (pendingBuy != null) {
+                        int amount;
+                        try {
+                            amount = Integer.parseInt(message);
+                            // Validate maximum amount
+                            if (amount > 1000000) {
+                                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cJumlah maksimum adalah 1.000.000 token."));
+                                event.setCancelled(true);
+                                return;
+                            }
+                            
+                            if (amount <= 0) {
+                                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cJumlah harus lebih besar dari 0."));
+                                plugin.getPlayerDataManager().removeTempData(playerId, "crypto_buy_pending");
+                                event.setCancelled(true);
+                                return;
+                            } 
+                            
+                            // Validate if player has enough tokens
+                            int playerTokens = plugin.getTokenManager().getTokens(player);
+                            if (playerTokens < amount) {
+                                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + 
+                                    "&cAnda tidak memiliki cukup token! Anda memiliki &f" + playerTokens + 
+                                    " &ctetapi membutuhkan &f" + amount + "&c."));
+                                plugin.getPlayerDataManager().removeTempData(playerId, "crypto_buy_pending");
+                                event.setCancelled(true);
+                                return;
+                            }
+                            
+                            // Open confirmation GUI instead of direct transaction
+                            event.setCancelled(true);
+                            Bukkit.getScheduler().runTask(plugin, () -> {
+                                plugin.getCryptoGUI().transactionAmounts.put(playerId, amount);
+                                plugin.getCryptoGUI().openConfirmationGUI(player, "buy", pendingBuy, 0);
+                                plugin.getPlayerDataManager().removeTempData(playerId, "crypto_buy_pending");
+                            });
+                        } catch (NumberFormatException e) {
+                            player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cFormat angka tidak valid. Transaksi dibatalkan."));
+                            plugin.getPlayerDataManager().removeTempData(playerId, "crypto_buy_pending");
+                            event.setCancelled(true);
                         }
-                        if (amount <= 0) {
-                            player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cJumlah harus lebih besar dari 0."));
-                        } else {
-                            // Process buy with amount and crypto ID
-                            plugin.getCryptoManager().buyCrypto(player, pendingBuy, amount);
+                    }
+                    // For selling, we expect crypto amount
+                    else if (pendingSell != null) {
+                        try {
+                            double amount = Double.parseDouble(message);
+                            if (amount <= 0) {
+                                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cJumlah harus lebih besar dari 0."));
+                                plugin.getPlayerDataManager().removeTempData(playerId, "crypto_sell_pending");
+                                event.setCancelled(true);
+                                return;
+                            }
+                            
+                            // Validate if player has enough crypto
+                            double playerAmount = plugin.getCryptoManager().getPlayerInvestment(player, pendingSell);
+                            if (playerAmount < amount) {
+                                player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + 
+                                    "&cAnda tidak memiliki cukup crypto! Anda memiliki &f" + 
+                                    String.format("%.6f", playerAmount) + " &ctetapi ingin menjual &f" + 
+                                    String.format("%.6f", amount) + "&c."));
+                                plugin.getPlayerDataManager().removeTempData(playerId, "crypto_sell_pending");
+                                event.setCancelled(true);
+                                return;
+                            }
+                            
+                            // Open confirmation GUI instead of direct transaction
+                            event.setCancelled(true);
+                            Bukkit.getScheduler().runTask(plugin, () -> {
+                                plugin.getCryptoGUI().openConfirmationGUI(player, "sell", pendingSell, amount);
+                                plugin.getPlayerDataManager().removeTempData(playerId, "crypto_sell_pending");
+                            });
+                        } catch (NumberFormatException e) {
+                            player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cFormat angka tidak valid. Transaksi dibatalkan."));
+                            plugin.getPlayerDataManager().removeTempData(playerId, "crypto_sell_pending");
+                            event.setCancelled(true);
                         }
-                        
-                        // Clear pending data
-                        plugin.getPlayerDataManager().removeTempData(playerId, "crypto_buy_pending");
-                        event.setCancelled(true);
-                    } catch (NumberFormatException e) {
-                        player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cFormat angka tidak valid. Transaksi dibatalkan."));
-                        plugin.getPlayerDataManager().removeTempData(playerId, "crypto_buy_pending");
-                        plugin.getPlayerDataManager().removeTempData(playerId, "crypto_sell_pending");
-                        event.setCancelled(true);
                     }
-                }
-                // For selling, we expect crypto amount
-                else if (pendingSell != null) {
-                    double amount = Double.parseDouble(message);
-                    if (amount <= 0) {
-                        player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cJumlah harus lebih besar dari 0."));
-                    } else {
-                        // Process sell with amount and crypto ID
-                        plugin.getCryptoManager().sellCrypto(player, pendingSell, amount);
-                    }
-                    
-                    // Clear pending data
-                    plugin.getPlayerDataManager().removeTempData(playerId, "crypto_sell_pending");
-                    event.setCancelled(true);
-                }
             } catch (NumberFormatException e) {
                 player.sendMessage(ColorUtils.colorize(NusaCore.PREFIX + "&cFormat angka tidak valid. Transaksi dibatalkan."));
                 plugin.getPlayerDataManager().removeTempData(playerId, "crypto_buy_pending");

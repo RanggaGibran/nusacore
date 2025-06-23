@@ -1,6 +1,7 @@
 package id.nusacore.crypto;
 
 import id.nusacore.NusaCore;
+import id.nusacore.database.CryptoHistoryDatabase;
 import id.nusacore.utils.ColorUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -28,21 +29,21 @@ public class CryptoManager {
     // Player investments [playerId -> [currencyId -> amount]]
     private final Map<UUID, Map<String, Double>> playerInvestments = new HashMap<>();
     
-    // Market history for price charts
-    private final Map<String, List<Double>> priceHistory = new HashMap<>();
-    
     // Last market update time
     private LocalDateTime lastMarketUpdate;
     
     // Scheduled task for market updates
     private int marketUpdateTask;
     
+    private final CryptoHistoryDatabase historyDatabase;
+    
     public CryptoManager(NusaCore plugin) {
         this.plugin = plugin;
+        this.historyDatabase = new CryptoHistoryDatabase();
         loadConfig();
         initializeMarket();
         scheduleMarketUpdates();
-        scheduleAutoSave(); // Add this line to enable auto-saving
+        scheduleAutoSave();
     }
     
     /**
@@ -65,55 +66,41 @@ public class CryptoManager {
      * Initialize crypto market with default values
      */
     private void initializeMarket() {
-        // Load the configuration first to ensure we have any existing data
         cryptoCurrencies.clear();
-        
-        // Load cryptocurrencies
         ConfigurationSection currenciesSection = cryptoConfig.getConfigurationSection("currencies");
-        
         if (currenciesSection != null) {
             for (String currencyId : currenciesSection.getKeys(false)) {
                 ConfigurationSection currencySection = currenciesSection.getConfigurationSection(currencyId);
-                
                 if (currencySection != null) {
                     String name = currencySection.getString("name", currencyId);
                     String symbol = currencySection.getString("symbol", currencyId.toUpperCase());
                     double initialPrice = currencySection.getDouble("initial-price", 100.0);
-                    double volatility = currencySection.getDouble("volatility", 0.05); // 5% default volatility
+                    double volatility = currencySection.getDouble("volatility", 0.05);
                     double minPrice = currencySection.getDouble("min-price", 10.0);
                     double maxPrice = currencySection.getDouble("max-price", 10000.0);
                     String riskLevel = currencySection.getString("risk", "medium");
-                    
                     CryptoCurrency crypto = new CryptoCurrency(
-                        currencyId,
-                        name,
-                        symbol,
-                        initialPrice,
-                        volatility,
-                        minPrice,
-                        maxPrice,
-                        CryptoRisk.fromString(riskLevel)
+                        currencyId, name, symbol, initialPrice, volatility, minPrice, maxPrice, CryptoRisk.fromString(riskLevel)
                     );
-                    
                     cryptoCurrencies.put(currencyId, crypto);
-                    priceHistory.put(currencyId, new ArrayList<>(Collections.singletonList(initialPrice)));
-                    
                     plugin.getLogger().info("Loaded cryptocurrency: " + name + " (" + symbol + ") - Initial price: " + initialPrice);
                 }
             }
         }
-        
-        // Now load investments - but don't clear the map first if it already has data
-        // We'll handle clearing in the loadPlayerInvestments method instead
         loadPlayerInvestments();
-        
-        // Load price history data if available
+        // --- Migration from YAML to SQLite for price history ---
         ConfigurationSection historySection = cryptoConfig.getConfigurationSection("price-history");
         if (historySection != null) {
             for (String currencyId : historySection.getKeys(false)) {
-                List<Double> history = historySection.getDoubleList(currencyId);
-                priceHistory.put(currencyId, history);
+                List<Double> oldHistory = historySection.getDoubleList(currencyId);
+                if (!oldHistory.isEmpty()) {
+                    plugin.getLogger().info("Migrating price history for " + currencyId + " to SQLite...");
+                    historyDatabase.migrateFromYaml(currencyId, oldHistory);
+                }
             }
+            // Remove price-history from YAML after migration
+            cryptoConfig.set("price-history", null);
+            try { cryptoConfig.save(cryptoFile); } catch (IOException e) { e.printStackTrace(); }
         }
     }
     
@@ -142,54 +129,31 @@ public class CryptoManager {
      * Update all crypto prices in the market
      */
     public void updateMarket() {
-        if (cryptoCurrencies.isEmpty()) {
-            return;
-        }
-        
+        if (cryptoCurrencies.isEmpty()) return;
         boolean broadcastChanges = cryptoConfig.getBoolean("settings.broadcast-changes", true);
         StringBuilder changes = new StringBuilder();
         changes.append(ColorUtils.colorize("&8&m----------------------------------------\n"));
         changes.append(ColorUtils.colorize("&b&lCRYPTO MARKET UPDATE\n"));
         changes.append(ColorUtils.colorize("&8&m----------------------------------------\n"));
-        
         for (CryptoCurrency crypto : cryptoCurrencies.values()) {
             double oldPrice = crypto.getCurrentPrice();
             updateCryptoPrice(crypto);
             double newPrice = crypto.getCurrentPrice();
-            
-            // Store in price history
-            List<Double> history = priceHistory.getOrDefault(crypto.getId(), new ArrayList<>());
-            history.add(newPrice);
-            
-            // Keep history at a reasonable size
-            if (history.size() > 50) { // Keep last 50 updates
-                history.remove(0);
-            }
-            
-            priceHistory.put(crypto.getId(), history);
-            
-            // Add to broadcast message
+            // Store in SQLite price history
+            historyDatabase.insertPrice(crypto.getId(), newPrice);
             double percentChange = ((newPrice - oldPrice) / oldPrice) * 100;
             String changeStr = String.format("%.2f", percentChange) + "%";
             String arrow = percentChange > 0 ? "&a▲" : (percentChange < 0 ? "&c▼" : "&7◆");
-            
-            changes.append(ColorUtils.colorize("&f" + crypto.getSymbol() + " &8- &f" + 
-                formatPrice(newPrice) + " Tokens " + arrow + " &f" + changeStr + "\n"));
+            changes.append(ColorUtils.colorize("&f" + crypto.getSymbol() + " &8- &f" + formatPrice(newPrice) + " Tokens " + arrow + " &f" + changeStr + "\n"));
         }
-        
         if (broadcastChanges) {
             changes.append(ColorUtils.colorize("&8&m----------------------------------------\n"));
             Bukkit.broadcastMessage(ColorUtils.colorize(changes.toString()));
         }
-        
-        // Notify Discord if integration is enabled
         if (plugin.getCryptoDiscordIntegration() != null && plugin.getCryptoDiscordIntegration().isEnabled()) {
             plugin.getCryptoDiscordIntegration().checkPriceAlerts();
         }
-        
-        // Save updated prices to config
         saveMarketData();
-        
         lastMarketUpdate = LocalDateTime.now();
     }
     
@@ -234,11 +198,7 @@ public class CryptoManager {
      */
     public void saveMarketData() {
         try {
-            // Log the current state for debugging
-            plugin.getLogger().info("Saving crypto market data... Current investments: " + 
-                playerInvestments.size() + " player(s)");
-                
-            // Save cryptocurrency prices
+            plugin.getLogger().info("Saving crypto market data... Current investments: " + playerInvestments.size() + " player(s)");
             ConfigurationSection currenciesSection = cryptoConfig.createSection("currencies");
             for (Map.Entry<String, CryptoCurrency> entry : cryptoCurrencies.entrySet()) {
                 ConfigurationSection currencySection = currenciesSection.createSection(entry.getKey());
@@ -251,8 +211,6 @@ public class CryptoManager {
                 currencySection.set("max-price", crypto.getMaxPrice());
                 currencySection.set("risk", crypto.getRisk().name());
             }
-            
-            // Save player investments
             ConfigurationSection investmentsSection = cryptoConfig.createSection("investments");
             for (Map.Entry<UUID, Map<String, Double>> entry : playerInvestments.entrySet()) {
                 ConfigurationSection playerSection = investmentsSection.createSection(entry.getKey().toString());
@@ -262,16 +220,8 @@ public class CryptoManager {
                     }
                 }
             }
-            
-            // Save price history
-            ConfigurationSection historySection = cryptoConfig.createSection("price-history");
-            for (Map.Entry<String, List<Double>> entry : priceHistory.entrySet()) {
-                historySection.set(entry.getKey(), entry.getValue());
-            }
-            
-            // Save config to file
+            // No longer save price-history to YAML
             cryptoConfig.save(cryptoFile);
-            
             plugin.getLogger().info("Crypto market data saved successfully to " + cryptoFile.getName());
         } catch (Exception e) {
             plugin.getLogger().severe("Failed to save crypto market data: " + e.getMessage());
@@ -526,7 +476,8 @@ public class CryptoManager {
      * Get price history for a cryptocurrency
      */
     public List<Double> getPriceHistory(String currencyId) {
-        return priceHistory.getOrDefault(currencyId, new ArrayList<>());
+        // Fetch last 50 prices from SQLite
+        return historyDatabase.getPriceHistory(currencyId, 50);
     }
     
     /**

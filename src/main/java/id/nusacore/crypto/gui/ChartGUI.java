@@ -198,8 +198,7 @@ public class ChartGUI implements Listener {
             if (dataIndex < 0) continue;
             
             double price = chartData.get(dataIndex);
-            
-            // Normalize position (0-2 for rows)
+              // Normalize position (0-2 for rows)
             double normalized = (price - min) / range;
             int row = normalized >= 0.66 ? 0 : (normalized >= 0.33 ? 1 : 2);
             
